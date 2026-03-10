@@ -1,0 +1,18 @@
+spring:
+  config:
+    activate:
+      on-profile: uat
+
+  datasource:
+    url:
+    username:
+    password:
+    driver-class-name:
+  jpa:
+    show-sql: false
+
+server:
+  port: 8081
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"
