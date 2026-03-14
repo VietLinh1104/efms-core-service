@@ -1,8 +1,8 @@
 package com.linhdv.efms_core_service.service.accounting;
 
-import com.linhdv.efms_core_service.dto.request.CreateAccountRequest;
-import com.linhdv.efms_core_service.dto.response.AccountBalanceResponse;
-import com.linhdv.efms_core_service.dto.response.AccountResponse;
+import com.linhdv.efms_core_service.dto.accounting.request.CreateAccountRequest;
+import com.linhdv.efms_core_service.dto.accounting.response.AccountBalanceResponse;
+import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
 import com.linhdv.efms_core_service.repository.accounting.AccountRepository;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.entity.Company;

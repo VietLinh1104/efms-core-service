@@ -1,7 +1,7 @@
 package com.linhdv.efms_core_service.service.accounting;
 
-import com.linhdv.efms_core_service.dto.response.TrialBalanceLineResponse;
-import com.linhdv.efms_core_service.dto.response.TrialBalanceResponse;
+import com.linhdv.efms_core_service.dto.accounting.response.TrialBalanceLineResponse;
+import com.linhdv.efms_core_service.dto.accounting.response.TrialBalanceResponse;
 import com.linhdv.efms_core_service.repository.accounting.AccountRepository;
 import com.linhdv.efms_core_service.repository.accounting.FiscalPeriodRepository;
 import com.linhdv.efms_core_service.repository.accounting.JournalLineRepository;

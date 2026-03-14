@@ -1,7 +1,7 @@
 package com.linhdv.efms_core_service.service.accounting;
 
-import com.linhdv.efms_core_service.dto.request.CreateFiscalPeriodRequest;
-import com.linhdv.efms_core_service.dto.response.FiscalPeriodResponse;
+import com.linhdv.efms_core_service.dto.accounting.request.CreateFiscalPeriodRequest;
+import com.linhdv.efms_core_service.dto.accounting.response.FiscalPeriodResponse;
 import com.linhdv.efms_core_service.repository.accounting.FiscalPeriodRepository;
 import com.linhdv.efms_core_service.entity.Company;
 import com.linhdv.efms_core_service.entity.FiscalPeriod;

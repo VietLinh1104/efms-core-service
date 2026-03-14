@@ -1,8 +1,8 @@
 package com.linhdv.efms_core_service.controller.accounting;
 
-import com.linhdv.efms_core_service.dto.response.TrialBalanceResponse;
+import com.linhdv.efms_core_service.dto.accounting.response.TrialBalanceResponse;
 import com.linhdv.efms_core_service.service.accounting.TrialBalanceService;
-import com.linhdv.efms_core_service.dto.ApiResponse;
+import com.linhdv.efms_core_service.dto.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

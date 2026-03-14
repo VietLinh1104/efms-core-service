@@ -1,10 +1,10 @@
 package com.linhdv.efms_core_service.controller.accounting;
 
-import com.linhdv.efms_core_service.dto.request.CreateAccountRequest;
-import com.linhdv.efms_core_service.dto.response.AccountBalanceResponse;
-import com.linhdv.efms_core_service.dto.response.AccountResponse;
+import com.linhdv.efms_core_service.dto.accounting.request.CreateAccountRequest;
+import com.linhdv.efms_core_service.dto.accounting.response.AccountBalanceResponse;
+import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
 import com.linhdv.efms_core_service.service.accounting.AccountService;
-import com.linhdv.efms_core_service.dto.ApiResponse;
+import com.linhdv.efms_core_service.dto.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

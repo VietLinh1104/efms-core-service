@@ -1,8 +1,8 @@
 package com.linhdv.efms_core_service.service.accounting;
 
-import com.linhdv.efms_core_service.dto.request.CreateJournalRequest;
-import com.linhdv.efms_core_service.dto.response.JournalEntryResponse;
-import com.linhdv.efms_core_service.dto.response.JournalLineResponse;
+import com.linhdv.efms_core_service.dto.accounting.request.CreateJournalRequest;
+import com.linhdv.efms_core_service.dto.accounting.response.JournalEntryResponse;
+import com.linhdv.efms_core_service.dto.accounting.response.JournalLineResponse;
 import com.linhdv.efms_core_service.repository.accounting.JournalEntryRepository;
 import com.linhdv.efms_core_service.repository.accounting.JournalLineRepository;
 import com.linhdv.efms_core_service.entity.*;

@@ -1,4 +1,4 @@
-package com.linhdv.efms_core_service.dto.response;
+package com.linhdv.efms_core_service.dto.accounting.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;

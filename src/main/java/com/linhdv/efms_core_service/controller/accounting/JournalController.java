@@ -1,9 +1,9 @@
 package com.linhdv.efms_core_service.controller.accounting;
 
-import com.linhdv.efms_core_service.dto.request.CreateJournalRequest;
-import com.linhdv.efms_core_service.dto.response.JournalEntryResponse;
+import com.linhdv.efms_core_service.dto.accounting.request.CreateJournalRequest;
+import com.linhdv.efms_core_service.dto.accounting.response.JournalEntryResponse;
 import com.linhdv.efms_core_service.service.accounting.JournalService;
-import com.linhdv.efms_core_service.dto.ApiResponse;
+import com.linhdv.efms_core_service.dto.common.ApiResponse;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
