@@ -1,6 +1,8 @@
 package com.linhdv.efms_core_service.repository.accounting;
 
 import com.linhdv.efms_core_service.entity.Account;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,6 +22,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     /** Tất cả tài khoản theo công ty */
     List<Account> findByCompanyIdOrderByCode(UUID companyId);
 
+    /** Tất cả tài khoản theo công ty */
+    Page<Account> findByCompanyIdOrderByCode(UUID companyId, Pageable pageable);
     /** Kiểm tra trùng code trong cùng công ty */
     boolean existsByCompanyIdAndCode(UUID companyId, String code);
 
