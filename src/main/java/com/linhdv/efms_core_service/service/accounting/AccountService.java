@@ -6,8 +6,11 @@ import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
 import com.linhdv.efms_core_service.repository.accounting.AccountRepository;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.entity.Company;
+import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,11 +42,10 @@ public class AccountService {
 
     /** Trả về danh sách phẳng tất cả tài khoản */
     @Transactional(readOnly = true)
-    public List<AccountResponse> listAllPage(UUID companyId) {
-        return accountRepository.findByCompanyIdOrderByCode(companyId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public PagedResponse<AccountResponse> listAllPage(UUID companyId, int page, int size) {
+        Page<Account> data = accountRepository.findByCompanyIdOrderByCode(companyId, PageRequest.of(page, size));
+        List<AccountResponse> content = data.getContent().stream().map(this::toResponse).toList();
+        return PagedResponse.of(content, page, size, data.getTotalElements());
     }
 
     /** Trả về danh sách dạng cây (chỉ root, children được nhúng vào) */

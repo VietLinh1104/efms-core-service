@@ -5,6 +5,7 @@ import com.linhdv.efms_core_service.dto.accounting.response.AccountBalanceRespon
 import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
 import com.linhdv.efms_core_service.service.accounting.AccountService;
 import com.linhdv.efms_core_service.dto.common.ApiResponse;
+import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +36,17 @@ public class AccountController {
         List<AccountResponse> data = tree
                 ? accountService.listTree(companyId)
                 : accountService.listAll(companyId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @GetMapping
+    @Operation(summary = "Danh sách tài khoản", description = "Lấy danh sách tài khoản theo công ty (pagination).")
+    public ResponseEntity<ApiResponse<PagedResponse<AccountResponse>>> listPage(
+            @Parameter(description = "UUID công ty")
+            @RequestParam UUID companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size){
+        PagedResponse<AccountResponse> data = accountService.listAllPage(companyId,page,size);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
