@@ -39,7 +39,7 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @GetMapping
+    @GetMapping("/page")
     @Operation(summary = "Danh sách tài khoản", description = "Lấy danh sách tài khoản theo công ty (pagination).")
     public ResponseEntity<ApiResponse<PagedResponse<AccountResponse>>> listPage(
             @Parameter(description = "UUID công ty")
