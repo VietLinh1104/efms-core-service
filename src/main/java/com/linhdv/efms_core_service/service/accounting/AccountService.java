@@ -37,6 +37,15 @@ public class AccountService {
                 .toList();
     }
 
+    /** Trả về danh sách phẳng tất cả tài khoản */
+    @Transactional(readOnly = true)
+    public List<AccountResponse> listAllPage(UUID companyId) {
+        return accountRepository.findByCompanyIdOrderByCode(companyId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     /** Trả về danh sách dạng cây (chỉ root, children được nhúng vào) */
     @Transactional(readOnly = true)
     public List<AccountResponse> listTree(UUID companyId) {
