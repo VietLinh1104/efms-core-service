@@ -14,12 +14,12 @@ import java.util.UUID;
 public interface PartnerRepository extends JpaRepository<Partner, UUID> {
 
     @Query("""
-            SELECT p FROM Partner p
-            WHERE p.company.id = :companyId
-              AND (:type IS NULL OR p.type = :type)
-              AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
-            ORDER BY p.createdAt DESC
-            """)
+        SELECT p FROM Partner p
+        WHERE p.company.id = :companyId
+          AND (:type IS NULL OR p.type = :type)
+          AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
+        ORDER BY p.createdAt DESC
+        """)
     Page<Partner> search(
             @Param("companyId") UUID companyId,
             @Param("type") String type,

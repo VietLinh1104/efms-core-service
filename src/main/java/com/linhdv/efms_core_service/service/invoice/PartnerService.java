@@ -26,7 +26,10 @@ public class PartnerService {
 
     @Transactional(readOnly = true)
     public PagedResponse<PartnerResponse> search(UUID companyId, String type, String keyword, int page, int size) {
-        Page<Partner> data = partnerRepository.search(companyId, type, keyword, PageRequest.of(page, size));
+        // Đảm bảo keyword là null nếu nó rỗng hoặc chỉ toàn khoảng trắng
+        String searchKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+
+        Page<Partner> data = partnerRepository.search(companyId, type, searchKeyword, PageRequest.of(page, size));
         List<PartnerResponse> content = data.getContent().stream().map(this::toResponse).toList();
         return PagedResponse.of(content, page, size, data.getTotalElements());
     }
