@@ -17,7 +17,7 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     /** Tìm kiếm chứng từ theo công ty, trạng thái, khoảng ngày */
     @Query("""
             SELECT j FROM JournalEntry j
-            WHERE j.company.id = :companyId
+            WHERE j.companyId = :companyId
               AND (:status IS NULL OR j.status = :status)
               AND (:fromDate IS NULL OR j.entryDate >= :fromDate)
               AND (:toDate IS NULL OR j.entryDate <= :toDate)

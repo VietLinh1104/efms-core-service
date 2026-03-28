@@ -15,7 +15,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     @Query("""
             SELECT p FROM Payment p
-            WHERE p.company.id = :companyId
+            WHERE p.companyId = :companyId
               AND (:type IS NULL OR p.paymentType = :type)
               AND (:partnerId IS NULL OR p.partner.id = :partnerId)
             ORDER BY p.paymentDate DESC, p.createdAt DESC

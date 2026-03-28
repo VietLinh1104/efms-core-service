@@ -26,7 +26,7 @@ public interface JournalLineRepository extends JpaRepository<JournalLine, UUID> 
                    SUM(jl.credit) AS totalCredit
             FROM JournalLine jl
             JOIN jl.journalEntry je
-            WHERE je.company.id = :companyId
+            WHERE je.companyId = :companyId
               AND je.status = 'posted'
               AND je.entryDate BETWEEN :fromDate AND :toDate
             GROUP BY jl.account.id

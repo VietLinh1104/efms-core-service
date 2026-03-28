@@ -15,7 +15,7 @@ public interface PartnerRepository extends JpaRepository<Partner, UUID> {
 
     @Query("""
         SELECT p FROM Partner p
-        WHERE p.company.id = :companyId
+        WHERE p.companyId = :companyId
           AND (:type IS NULL OR p.type = :type)
           AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
         ORDER BY p.createdAt DESC

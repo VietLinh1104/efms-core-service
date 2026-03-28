@@ -16,7 +16,7 @@ import java.util.UUID;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     /** Danh sách tài khoản gốc (không có parent) — dùng để build cây */
-    @Query("SELECT a FROM Account a WHERE a.company.id = :companyId AND a.parent IS NULL ORDER BY a.code")
+    @Query("SELECT a FROM Account a WHERE a.companyId = :companyId AND a.parent IS NULL ORDER BY a.code")
     List<Account> findRootAccounts(@Param("companyId") UUID companyId);
 
     /** Tất cả tài khoản theo công ty */
