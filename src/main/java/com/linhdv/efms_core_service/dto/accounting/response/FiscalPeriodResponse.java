@@ -29,7 +29,7 @@ public class FiscalPeriodResponse {
     private String status;
 
     @Schema(description = "Người đóng kỳ")
-    private String closedBy;
+    private UUID closedBy;
 
     @Schema(description = "Thời điểm đóng kỳ")
     private Instant closedAt;

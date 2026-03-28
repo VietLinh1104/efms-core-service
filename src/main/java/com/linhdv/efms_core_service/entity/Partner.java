@@ -16,14 +16,14 @@ import java.util.UUID;
 @Table(name = "partners", schema = "public")
 public class Partner {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id", nullable = false)
+    private UUID companyId;
 
     @Size(max = 255)
     @NotNull
@@ -50,6 +50,7 @@ public class Partner {
     @Column(name = "address", length = Integer.MAX_VALUE)
     private String address;
 
+    // @ManyToOne nội bộ Core DB — accounts vẫn cùng schema
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ar_account_id")
     private Account arAccount;
@@ -66,6 +67,5 @@ public class Partner {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

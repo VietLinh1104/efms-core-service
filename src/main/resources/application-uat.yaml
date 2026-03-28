@@ -12,7 +12,7 @@ spring:
     show-sql: false
 
 server:
-  port: 8081
+  port: 8082
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"

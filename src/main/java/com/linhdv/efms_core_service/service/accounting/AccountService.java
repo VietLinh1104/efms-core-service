@@ -5,7 +5,6 @@ import com.linhdv.efms_core_service.dto.accounting.response.AccountBalanceRespon
 import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
 import com.linhdv.efms_core_service.repository.accounting.AccountRepository;
 import com.linhdv.efms_core_service.entity.Account;
-import com.linhdv.efms_core_service.entity.Company;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -82,11 +81,9 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(CreateAccountRequest req) {
-        Company company = new Company();
-        company.setId(req.getCompanyId());
 
         Account account = new Account();
-        account.setCompany(company);
+        account.setCompanyId(req.getCompanyId());
         account.setCode(req.getCode());
         account.setName(req.getName());
         account.setType(req.getType());

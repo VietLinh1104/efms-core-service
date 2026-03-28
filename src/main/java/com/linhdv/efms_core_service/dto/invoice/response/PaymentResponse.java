@@ -46,7 +46,7 @@ public class PaymentResponse {
     private UUID journalEntryId;
 
     @Schema(description = "Người nhận/chi")
-    private String createdBy;
+    private UUID createdBy;
 
     @Schema(description = "Thời gian tạo")
     private Instant createdAt;

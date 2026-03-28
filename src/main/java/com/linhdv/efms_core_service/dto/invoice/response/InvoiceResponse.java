@@ -58,7 +58,7 @@ public class InvoiceResponse {
     private String status;
 
     @Schema(description = "Người lập")
-    private String createdBy;
+    private UUID createdBy;
 
     @Schema(description = "Thời điểm tạo")
     private Instant createdAt;

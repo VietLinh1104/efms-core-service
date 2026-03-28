@@ -4,7 +4,6 @@ import com.linhdv.efms_core_service.dto.finance.request.CreateBankAccountRequest
 import com.linhdv.efms_core_service.dto.finance.response.BankAccountResponse;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.entity.BankAccount;
-import com.linhdv.efms_core_service.entity.Company;
 import com.linhdv.efms_core_service.repository.finance.BankAccountRepository;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -39,9 +38,7 @@ public class BankAccountService {
     @Transactional
     public BankAccountResponse create(CreateBankAccountRequest req) {
         BankAccount ba = new BankAccount();
-        
-        Company c = new Company(); c.setId(req.getCompanyId());
-        ba.setCompany(c);
+        ba.setCompanyId(req.getCompanyId());
         
         if (req.getGlAccountId() != null) {
             Account acc = new Account(); acc.setId(req.getGlAccountId());
