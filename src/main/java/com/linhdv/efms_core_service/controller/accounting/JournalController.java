@@ -19,7 +19,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/accounting/journals")
+@RequestMapping("/v1/accounting/journals")
 @RequiredArgsConstructor
 @Tag(name = "Journal Entries", description = "Quản lý chứng từ kế toán")
 public class JournalController {

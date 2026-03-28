@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/accounting/trial-balance")
+@RequestMapping("/v1/accounting/trial-balance")
 @RequiredArgsConstructor
 @Tag(name = "Trial Balance", description = "Bảng cân đối tài khoản")
 public class TrialBalanceController {

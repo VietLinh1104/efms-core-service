@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/accounting/fiscal-periods")
+@RequestMapping("/v1/accounting/fiscal-periods")
 @RequiredArgsConstructor
 @Tag(name = "Fiscal Periods", description = "Quản lý kỳ kế toán")
 public class FiscalPeriodController {

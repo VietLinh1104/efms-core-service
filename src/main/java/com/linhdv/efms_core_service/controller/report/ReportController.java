@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/reports")
+@RequestMapping("/v1/reports")
 @RequiredArgsConstructor
 @Tag(name = "Reports", description = "Các Báo cáo Tài chính Kế toán tổng hợp")
 public class ReportController {
@@ -70,19 +70,20 @@ public class ReportController {
     }
 
     @GetMapping("/general-ledger")
-    @Operation(summary = "Sổ cái chi tiết theo tài khoản (Account Ledger)", description = "Sử dụng bộ lọc search trên /api/v1/accounting/journals")
+    @Operation(summary = "Sổ cái chi tiết theo tài khoản (Account Ledger)", description = "Sử dụng bộ lọc search trên /v1/accounting/journals")
     public ResponseEntity<ApiResponse<String>> getGeneralLedger() {
-        return ResponseEntity.ok(ApiResponse.success("Vui lòng truy cập module Sổ Nhật Ký chung (Journal Entries) hoặc bộ lọc account"));
+        return ResponseEntity.ok(
+                ApiResponse.success("Vui lòng truy cập module Sổ Nhật Ký chung (Journal Entries) hoặc bộ lọc account"));
     }
 
     @GetMapping("/trial-balance")
     @Operation(summary = "Bảng Cân đối tài khoản (Trial Balance)", description = "Chuyển hướng dùng Endpoint của Accounting module")
     public ResponseEntity<ApiResponse<String>> getTrialBalanceReport() {
-        return ResponseEntity.ok(ApiResponse.success("Đã có endpoint ở: GET /api/v1/accounting/trial-balance"));
+        return ResponseEntity.ok(ApiResponse.success("Đã có endpoint ở: GET /v1/accounting/trial-balance"));
     }
 
     // Export Endpoints
-    @GetMapping({"/balance-sheet/export", "/profit-loss/export", "/cash-flow/export"})
+    @GetMapping({ "/balance-sheet/export", "/profit-loss/export", "/cash-flow/export" })
     @Operation(summary = "Xuất các báo cáo ra định dạng Excel / PDF (Stub)")
     public ResponseEntity<ApiResponse<String>> exportReport() {
         return ResponseEntity.ok(ApiResponse.success("Tính năng xuất Excel/PDF đang được phát triển..."));

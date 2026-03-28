@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/accounting/accounts")
+@RequestMapping("/v1/accounting/accounts")
 @RequiredArgsConstructor
 @Tag(name = "Accounts", description = "Quản lý tài khoản kế toán")
 public class AccountController {
@@ -42,11 +42,10 @@ public class AccountController {
     @GetMapping("/page")
     @Operation(summary = "Danh sách tài khoản", description = "Lấy danh sách tài khoản theo công ty (pagination).")
     public ResponseEntity<ApiResponse<PagedResponse<AccountResponse>>> listPage(
-            @Parameter(description = "UUID công ty")
-            @RequestParam UUID companyId,
+            @Parameter(description = "UUID công ty") @RequestParam UUID companyId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size){
-        PagedResponse<AccountResponse> data = accountService.listAllPage(companyId,page,size);
+            @RequestParam(defaultValue = "20") int size) {
+        PagedResponse<AccountResponse> data = accountService.listAllPage(companyId, page, size);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 

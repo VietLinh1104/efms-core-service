@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/finance/bank-accounts")
+@RequestMapping("/v1/finance/bank-accounts")
 @RequiredArgsConstructor
 @Tag(name = "Bank Accounts", description = "Quản lý Tài khoản Ngân hàng (Cash & Bank)")
 public class BankAccountController {
@@ -32,8 +32,7 @@ public class BankAccountController {
             @Parameter(description = "Loại (checking, savings)") @RequestParam(required = false) String type,
             @Parameter(description = "Từ khoá") @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.success(bankAccountService.search(companyId, type, search, page, size)));
     }
 
@@ -60,14 +59,17 @@ public class BankAccountController {
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Bật/Tắt trạng thái hoạt động tài khoản")
     public ResponseEntity<ApiResponse<BankAccountResponse>> toggleActive(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Thay đổi trạng thái thành công", bankAccountService.toggleActive(id)));
+        return ResponseEntity
+                .ok(ApiResponse.success("Thay đổi trạng thái thành công", bankAccountService.toggleActive(id)));
     }
 
     @GetMapping("/{id}/balance")
     @Operation(summary = "Lấy Số dư tài khoản hiện tại")
     public ResponseEntity<ApiResponse<BigDecimal>> getBalance(@PathVariable UUID id) {
         BankAccountResponse ba = bankAccountService.getById(id);
-        // Tạm thời trả list zero or opening_balance. Sum từ BankTransaction.amount sẽ chuẩn nhất.
-        return ResponseEntity.ok(ApiResponse.success(ba.getOpeningBalance() != null ? ba.getOpeningBalance() : BigDecimal.ZERO));
+        // Tạm thời trả list zero or opening_balance. Sum từ BankTransaction.amount sẽ
+        // chuẩn nhất.
+        return ResponseEntity
+                .ok(ApiResponse.success(ba.getOpeningBalance() != null ? ba.getOpeningBalance() : BigDecimal.ZERO));
     }
 }

@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/payments")
+@RequestMapping("/v1/payments")
 @RequiredArgsConstructor
 @Tag(name = "Payments", description = "Quản lý Thanh toán (Thu / Chi)")
 public class PaymentController {
@@ -31,8 +31,7 @@ public class PaymentController {
             @RequestParam(required = false) String paymentType, // in / out
             @RequestParam(required = false) UUID partnerId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.success(
                 paymentService.search(companyId, paymentType, partnerId, page, size)));
     }
@@ -78,7 +77,8 @@ public class PaymentController {
     @PostMapping("/{id}/post")
     @Operation(summary = "Ghi sổ bút toán tổng hợp (Post payment → GL)")
     public ResponseEntity<ApiResponse<PaymentResponse>> postPayment(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.getDetail(id)));
+        return ResponseEntity
+                .ok(ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.getDetail(id)));
     }
 
     @DeleteMapping("/{id}")

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/finance/reconciliation")
+@RequestMapping("/v1/finance/reconciliation")
 @RequiredArgsConstructor
 @Tag(name = "Bank Reconciliation", description = "Đối chiếu số dư NH - Hệ thống")
 public class ReconciliationController {
@@ -26,8 +26,7 @@ public class ReconciliationController {
     @GetMapping
     @Operation(summary = "Lấy danh sách các giao dịch NH đang đợi ghép / chờ đối chiếu")
     public ResponseEntity<ApiResponse<List<BankTransactionResponse>>> getPendingMatches(
-            @RequestParam UUID bankAccountId
-    ) {
+            @RequestParam UUID bankAccountId) {
         return ResponseEntity.ok(ApiResponse.success(reconciliationService.getUnreconciledTransactions(bankAccountId)));
     }
 
@@ -41,13 +40,15 @@ public class ReconciliationController {
     @PostMapping("/auto-match")
     @Operation(summary = "Tính năng tự động tìm kiếm và Match hàng loạt các GD có Amount trùng và cùng Time")
     public ResponseEntity<ApiResponse<List<BankTransactionResponse>>> autoMatch(@RequestParam UUID bankAccountId) {
-        return ResponseEntity.ok(ApiResponse.success("Đã chạy Auto-match (Rule-based)", reconciliationService.autoMatch(bankAccountId)));
+        return ResponseEntity.ok(
+                ApiResponse.success("Đã chạy Auto-match (Rule-based)", reconciliationService.autoMatch(bankAccountId)));
     }
 
     @PostMapping("/unmatch/{bankTransactionId}")
     @Operation(summary = "Gỡ / Xóa link khớp của giao dịch (Un-reconcile)")
     public ResponseEntity<ApiResponse<BankTransactionResponse>> unmatch(@PathVariable UUID bankTransactionId) {
-        return ResponseEntity.ok(ApiResponse.success("Gỡ đối chiếu thành công", reconciliationService.unmatch(bankTransactionId)));
+        return ResponseEntity
+                .ok(ApiResponse.success("Gỡ đối chiếu thành công", reconciliationService.unmatch(bankTransactionId)));
     }
 
     @GetMapping("/summary")
