@@ -13,7 +13,7 @@ target/
 .springBeans
 .sts4-cache
 src/main/resources/application-uat.yaml
-src/main/resources/application-local.yaml
+src/main/resources/application-dev.yaml
 
 
 ### IntelliJ IDEA ###
