@@ -3,4 +3,4 @@ spring:
     name: efms-core-service
 
   profiles:
-    active: dev
+    active: prod

@@ -3,7 +3,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-!**/main/resources/application-uat.yaml
+!**/main/resources/application-local.yaml
 ### STS ###
 .apt_generated
 .classpath
@@ -34,3 +34,4 @@ build/
 
 ### VS Code ###
 .vscode/
+.env
