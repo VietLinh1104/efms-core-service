@@ -14,19 +14,17 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "accounts", schema = "public", uniqueConstraints = {@UniqueConstraint(name = "accounts_company_id_code_key",
-        columnNames = {
-                "company_id",
-                "code"})})
+        columnNames = {"company_id", "code"})})
 public class Account {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id", nullable = false)
+    private UUID companyId;
 
     @Size(max = 20)
     @NotNull
@@ -48,6 +46,7 @@ public class Account {
     @Column(name = "balance_type", nullable = false, length = 10)
     private String balanceType;
 
+    // self-reference vẫn giữ @ManyToOne nội bộ (cùng Core DB)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Account parent;
@@ -60,6 +59,5 @@ public class Account {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

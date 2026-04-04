@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/finance/bank-transactions")
+@RequestMapping("/v1/finance/bank-transactions")
 @RequiredArgsConstructor
 @Tag(name = "Bank Transactions", description = "Quản lý Giao dịch Ngân hàng (Thủ công / Import)")
 public class BankTransactionController {
@@ -35,8 +35,7 @@ public class BankTransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.success(
                 bankTransactionService.search(companyId, bankAccountId, type, status, fromDate, toDate, page, size)));
     }
@@ -49,7 +48,8 @@ public class BankTransactionController {
 
     @PostMapping
     @Operation(summary = "Tạo một giao dịch thủ công trên hệ thống")
-    public ResponseEntity<ApiResponse<BankTransactionResponse>> create(@Valid @RequestBody CreateBankTransactionRequest req) {
+    public ResponseEntity<ApiResponse<BankTransactionResponse>> create(
+            @Valid @RequestBody CreateBankTransactionRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Thêm giao dịch thủ công thành công", bankTransactionService.create(req)));
     }

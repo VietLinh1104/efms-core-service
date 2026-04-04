@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/partners")
+@RequestMapping("/v1/partners")
 @RequiredArgsConstructor
 @Tag(name = "Partners", description = "Quản lý Đối tác (Khách hàng / Nhà cung cấp)")
 public class PartnerController {
@@ -36,8 +36,7 @@ public class PartnerController {
             @Parameter(description = "Loại (customer/vendor)") @RequestParam(required = false) String type,
             @Parameter(description = "Từ khóa tìm kiếm") @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.success(partnerService.search(companyId, type, search, page, size)));
     }
 
@@ -76,7 +75,8 @@ public class PartnerController {
     @GetMapping("/{id}/balance")
     @Operation(summary = "Số dư công nợ của đối tác")
     public ResponseEntity<ApiResponse<BigDecimal>> getBalance(@PathVariable UUID id) {
-        // Có thể tính từ invoiceService / Payment hoặc trực tiếp từ journalLine cho chuẩn xác:
+        // Có thể tính từ invoiceService / Payment hoặc trực tiếp từ journalLine cho
+        // chuẩn xác:
         // Tạm thời trả về 0 để mô tả khung DTO.
         return ResponseEntity.ok(ApiResponse.success(BigDecimal.ZERO));
     }

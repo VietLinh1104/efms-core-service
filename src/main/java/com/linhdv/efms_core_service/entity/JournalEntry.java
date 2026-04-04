@@ -17,15 +17,16 @@ import java.util.UUID;
 @Table(name = "journal_entries", schema = "public")
 public class JournalEntry {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id", nullable = false)
+    private UUID companyId;
 
+    // @ManyToOne nội bộ Core DB — fiscal_periods cùng schema
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "period_id")
     private FiscalPeriod period;
@@ -54,13 +55,13 @@ public class JournalEntry {
     @Column(name = "source_ref_id")
     private UUID sourceRefId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private User createdBy;
+    // UUID từ Identity Service
+    @Column(name = "created_by")
+    private UUID createdBy;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "posted_by")
-    private User postedBy;
+    // UUID từ Identity Service
+    @Column(name = "posted_by")
+    private UUID postedBy;
 
     @Column(name = "posted_at")
     private Instant postedAt;
@@ -68,6 +69,5 @@ public class JournalEntry {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

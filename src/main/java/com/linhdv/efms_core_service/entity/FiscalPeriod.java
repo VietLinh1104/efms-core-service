@@ -17,14 +17,14 @@ import java.util.UUID;
 @Table(name = "fiscal_periods", schema = "public")
 public class FiscalPeriod {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id", nullable = false)
+    private UUID companyId;
 
     @Size(max = 50)
     @NotNull
@@ -45,9 +45,9 @@ public class FiscalPeriod {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "closed_by")
-    private User closedBy;
+    // UUID từ Identity Service — user đã đóng kỳ kế toán
+    @Column(name = "closed_by")
+    private UUID closedBy;
 
     @Column(name = "closed_at")
     private Instant closedAt;
@@ -55,6 +55,5 @@ public class FiscalPeriod {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

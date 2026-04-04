@@ -3,7 +3,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-#!**/main/resources/application-local.yaml
+!**/main/resources/application-uat.yaml
 ### STS ###
 .apt_generated
 .classpath
@@ -12,6 +12,9 @@ target/
 .settings
 .springBeans
 .sts4-cache
+src/main/resources/application-uat.yaml
+src/main/resources/application-dev.yaml
+
 
 ### IntelliJ IDEA ###
 .idea

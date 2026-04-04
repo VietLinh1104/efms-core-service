@@ -4,7 +4,6 @@ import com.linhdv.efms_core_service.dto.invoice.request.CreatePartnerRequest;
 import com.linhdv.efms_core_service.dto.invoice.response.PartnerResponse;
 import com.linhdv.efms_core_service.repository.invoice.PartnerRepository;
 import com.linhdv.efms_core_service.entity.Account;
-import com.linhdv.efms_core_service.entity.Company;
 import com.linhdv.efms_core_service.entity.Partner;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -41,14 +40,12 @@ public class PartnerService {
 
     @Transactional
     public PartnerResponse create(CreatePartnerRequest req) {
-        Company company = new Company();
-        company.setId(req.getCompanyId());
 
         Account ar = new Account(); ar.setId(req.getArAccountId());
         Account ap = new Account(); ap.setId(req.getApAccountId());
 
         Partner p = new Partner();
-        p.setCompany(company);
+        p.setCompanyId(req.getCompanyId());
         p.setName(req.getName());
         p.setType(req.getType());
         p.setTaxCode(req.getTaxCode());

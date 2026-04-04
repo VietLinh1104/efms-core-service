@@ -47,11 +47,10 @@ public class InvoiceService {
 
     @Transactional
     public InvoiceResponse create(CreateInvoiceRequest req) {
-        Company company = new Company(); company.setId(req.getCompanyId());
         Partner partner = new Partner(); partner.setId(req.getPartnerId());
 
         Invoice invoice = new Invoice();
-        invoice.setCompany(company);
+        invoice.setCompanyId(req.getCompanyId());
         invoice.setPartner(partner);
         invoice.setInvoiceType(req.getInvoiceType());
         invoice.setInvoiceNumber(req.getInvoiceNumber());
@@ -163,7 +162,7 @@ public class InvoiceService {
                 .totalAmount(inv.getTotalAmount())
                 .paidAmount(inv.getPaidAmount())
                 .status(inv.getStatus())
-                .createdBy(inv.getCreatedBy() != null ? inv.getCreatedBy().getName() : null)
+                .createdBy(inv.getCreatedBy() != null ? inv.getCreatedBy() : null)
                 .createdAt(inv.getCreatedAt())
                 .journalEntryId(inv.getJournalEntry() != null ? inv.getJournalEntry().getId() : null)
                 .build();

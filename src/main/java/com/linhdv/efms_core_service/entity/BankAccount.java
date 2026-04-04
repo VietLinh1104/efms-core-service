@@ -17,14 +17,14 @@ import java.util.UUID;
 @Table(name = "bank_accounts", schema = "public")
 public class BankAccount {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id", nullable = false)
+    private UUID companyId;
 
     @Size(max = 255)
     @NotNull
@@ -54,6 +54,7 @@ public class BankAccount {
     @Column(name = "opening_balance", precision = 18, scale = 2)
     private BigDecimal openingBalance;
 
+    // @ManyToOne nội bộ Core DB — accounts cùng schema
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gl_account_id")
     private Account glAccount;
@@ -66,6 +67,5 @@ public class BankAccount {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

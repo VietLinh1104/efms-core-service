@@ -39,10 +39,10 @@ public class JournalEntryResponse {
     private String periodName;
 
     @Schema(description = "Người tạo")
-    private String createdBy;
+    private UUID createdBy;
 
     @Schema(description = "Người post")
-    private String postedBy;
+    private UUID postedBy;
 
     @Schema(description = "Thời điểm post")
     private Instant postedAt;

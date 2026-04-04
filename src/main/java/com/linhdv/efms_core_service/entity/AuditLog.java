@@ -19,7 +19,7 @@ import java.util.UUID;
 @Table(name = "audit_logs", schema = "public")
 public class AuditLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
@@ -37,9 +37,9 @@ public class AuditLog {
     @Column(name = "action", nullable = false, length = 20)
     private String action;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "changed_by")
-    private User changedBy;
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
+    @Column(name = "changed_by")
+    private UUID changedBy;
 
     @ColumnDefault("now()")
     @Column(name = "changed_at")
@@ -52,6 +52,5 @@ public class AuditLog {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "new_data")
     private Map<String, Object> newData;
-
 
 }

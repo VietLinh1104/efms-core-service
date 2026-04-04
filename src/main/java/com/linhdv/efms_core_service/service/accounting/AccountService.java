@@ -5,7 +5,6 @@ import com.linhdv.efms_core_service.dto.accounting.response.AccountBalanceRespon
 import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
 import com.linhdv.efms_core_service.repository.accounting.AccountRepository;
 import com.linhdv.efms_core_service.entity.Account;
-import com.linhdv.efms_core_service.entity.Company;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -40,16 +39,12 @@ public class AccountService {
                 .toList();
     }
 
-    /** Trả về danh sách phẳng tất cả tài khoản phân trang*/
+    /** Trả về danh sách phẳng tất cả tài khoản */
     @Transactional(readOnly = true)
     public PagedResponse<AccountResponse> listAllPage(UUID companyId, int page, int size) {
-        Page<Account> data =  accountRepository.findByCompanyIdOrderByCode(companyId, PageRequest.of(page, size));
-        List<AccountResponse> accountResponses = data.getContent()
-                .stream()
-                .map(this::toResponse)
-                .toList();
-        return PagedResponse.of(accountResponses, page, size, data.getTotalElements());
-
+        Page<Account> data = accountRepository.findByCompanyIdOrderByCode(companyId, PageRequest.of(page, size));
+        List<AccountResponse> content = data.getContent().stream().map(this::toResponse).toList();
+        return PagedResponse.of(content, page, size, data.getTotalElements());
     }
 
     /** Trả về danh sách dạng cây (chỉ root, children được nhúng vào) */
@@ -86,11 +81,9 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(CreateAccountRequest req) {
-        Company company = new Company();
-        company.setId(req.getCompanyId());
 
         Account account = new Account();
-        account.setCompany(company);
+        account.setCompanyId(req.getCompanyId());
         account.setCode(req.getCode());
         account.setName(req.getName());
         account.setType(req.getType());

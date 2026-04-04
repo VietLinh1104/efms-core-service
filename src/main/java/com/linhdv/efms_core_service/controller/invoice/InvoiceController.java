@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/invoices")
+@RequestMapping("/v1/invoices")
 @RequiredArgsConstructor
 @Tag(name = "Invoices", description = "Quản lý Hóa đơn / Bill (AR / AP)")
 public class InvoiceController {
@@ -32,8 +32,7 @@ public class InvoiceController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) UUID partnerId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.success(
                 invoiceService.search(companyId, invoiceType, status, partnerId, page, size)));
     }
@@ -55,7 +54,7 @@ public class InvoiceController {
     @Operation(summary = "Cập nhật Hóa đơn (chỉ khi draft)")
     public ResponseEntity<ApiResponse<InvoiceResponse>> update(
             @PathVariable UUID id, @Valid @RequestBody CreateInvoiceRequest req) {
-        invoiceService.delete(id); // Cách tương tự như sửa Journal 
+        invoiceService.delete(id); // Cách tương tự như sửa Journal
         return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công", invoiceService.create(req)));
     }
 

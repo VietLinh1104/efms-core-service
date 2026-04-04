@@ -18,7 +18,7 @@ public interface BankTransactionRepository extends JpaRepository<BankTransaction
     @Query("""
             SELECT bt FROM BankTransaction bt
             JOIN bt.bankAccount ba
-            WHERE ba.company.id = :companyId
+            WHERE ba.companyId = :companyId
               AND (:accountId IS NULL OR ba.id = :accountId)
               AND (:type IS NULL OR bt.type = :type)
               AND (:status IS NULL OR

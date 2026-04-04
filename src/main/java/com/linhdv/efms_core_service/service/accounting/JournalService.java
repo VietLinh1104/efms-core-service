@@ -66,11 +66,8 @@ public class JournalService {
     public JournalEntryResponse create(CreateJournalRequest req) {
         validateBalance(req);
 
-        Company company = new Company();
-        company.setId(req.getCompanyId());
-
         JournalEntry je = new JournalEntry();
-        je.setCompany(company);
+        je.setCompanyId(req.getCompanyId());
         je.setEntryDate(req.getEntryDate());
         je.setReference(req.getReference());
         je.setDescription(req.getDescription());
@@ -173,8 +170,8 @@ public class JournalService {
                 .source(je.getSource())
                 .periodId(je.getPeriod() != null ? je.getPeriod().getId() : null)
                 .periodName(je.getPeriod() != null ? je.getPeriod().getName() : null)
-                .createdBy(je.getCreatedBy() != null ? je.getCreatedBy().getName() : null)
-                .postedBy(je.getPostedBy() != null ? je.getPostedBy().getName() : null)
+                .createdBy(je.getCreatedBy() != null ? je.getCreatedBy(): null)
+                .postedBy(je.getPostedBy() != null ? je.getPostedBy() : null)
                 .postedAt(je.getPostedAt())
                 .createdAt(je.getCreatedAt())
                 .build();

@@ -49,11 +49,10 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse create(CreatePaymentRequest req) {
-        Company com = new Company(); com.setId(req.getCompanyId());
         Partner prt = new Partner(); prt.setId(req.getPartnerId());
 
         Payment p = new Payment();
-        p.setCompany(com);
+        p.setCompanyId(req.getCompanyId());
         p.setPartner(prt);
         p.setPaymentType(req.getPaymentType());
         p.setPaymentDate(req.getPaymentDate());
@@ -133,7 +132,7 @@ public class PaymentService {
                 .amount(p.getAmount())
                 .paymentMethod(p.getPaymentMethod())
                 .reference(p.getReference())
-                .createdBy(p.getCreatedBy() != null ? p.getCreatedBy().getName() : null)
+                .createdBy(p.getCreatedBy() != null ? p.getCreatedBy() : null)
                 .createdAt(p.getCreatedAt())
                 .build();
     }

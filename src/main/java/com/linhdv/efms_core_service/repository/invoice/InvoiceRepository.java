@@ -17,7 +17,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("""
             SELECT i FROM Invoice i
-            WHERE i.company.id = :companyId
+            WHERE i.companyId = :companyId
               AND (:type IS NULL OR i.invoiceType = :type)
               AND (:status IS NULL OR i.status = :status)
               AND (:partnerId IS NULL OR i.partner.id = :partnerId)
@@ -33,7 +33,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("""
             SELECT i FROM Invoice i
-            WHERE i.company.id = :companyId
+            WHERE i.companyId = :companyId
               AND i.status IN ('open', 'in_payment')
               AND i.dueDate < :currentDate
             ORDER BY i.dueDate ASC

@@ -15,7 +15,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, UUID> 
 
     @Query("""
             SELECT b FROM BankAccount b
-            WHERE b.company.id = :companyId
+            WHERE b.companyId = :companyId
               AND (:type IS NULL OR b.type = :type)
               AND (:search IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(b.accountNumber) LIKE LOWER(CONCAT('%', :search, '%')))
             ORDER BY b.createdAt DESC

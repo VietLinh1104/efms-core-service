@@ -3,7 +3,6 @@ package com.linhdv.efms_core_service.service.accounting;
 import com.linhdv.efms_core_service.dto.accounting.request.CreateFiscalPeriodRequest;
 import com.linhdv.efms_core_service.dto.accounting.response.FiscalPeriodResponse;
 import com.linhdv.efms_core_service.repository.accounting.FiscalPeriodRepository;
-import com.linhdv.efms_core_service.entity.Company;
 import com.linhdv.efms_core_service.entity.FiscalPeriod;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +27,10 @@ public class FiscalPeriodService {
 
     @Transactional
     public FiscalPeriodResponse create(CreateFiscalPeriodRequest req) {
-        Company company = new Company();
-        company.setId(req.getCompanyId());
+
 
         FiscalPeriod period = new FiscalPeriod();
-        period.setCompany(company);
+        period.setCompanyId(req.getCompanyId());
         period.setName(req.getName());
         period.setStartDate(req.getStartDate());
         period.setEndDate(req.getEndDate());
@@ -79,7 +77,7 @@ public class FiscalPeriodService {
                 .startDate(p.getStartDate())
                 .endDate(p.getEndDate())
                 .status(p.getStatus())
-                .closedBy(p.getClosedBy() != null ? p.getClosedBy().getName() : null)
+                .closedBy(p.getClosedBy() != null ? p.getClosedBy(): null)
                 .closedAt(p.getClosedAt())
                 .createdAt(p.getCreatedAt())
                 .build();

@@ -18,15 +18,16 @@ import java.util.UUID;
 @Table(name = "invoices", schema = "public")
 public class Invoice {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false)
     private UUID id;
 
+    // UUID từ Identity Service — không có @ManyToOne/@JoinColumn
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id", nullable = false)
+    private UUID companyId;
 
+    // @ManyToOne nội bộ Core DB
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "partner_id", nullable = false)
@@ -84,17 +85,17 @@ public class Invoice {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    // @ManyToOne nội bộ Core DB
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "journal_entry_id")
     private JournalEntry journalEntry;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private User createdBy;
+    // UUID từ Identity Service
+    @Column(name = "created_by")
+    private UUID createdBy;
 
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }
