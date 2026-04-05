@@ -85,6 +85,17 @@ public class Invoice {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    @Size(max = 20)
+    @Column(name = "approval_status", length = 20)
+    private String approvalStatus;
+
+    @Column(name = "approval_comment", length = Integer.MAX_VALUE)
+    private String approvalComment;
+
+    @Size(max = 255)
+    @Column(name = "camunda_process_id", length = 255)
+    private String camundaProcessId;
+
     // @ManyToOne nội bộ Core DB
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "journal_entry_id")
