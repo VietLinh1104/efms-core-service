@@ -78,6 +78,19 @@
 			<version>2.5.0</version>
 		</dependency>
 
+		<!-- CAMUNDA SPRING BOOT STARTER (Spring Boot 3.x compatible) -->
+		<dependency>
+			<groupId>io.camunda</groupId>
+			<artifactId>camunda-spring-boot-starter</artifactId>
+			<version>8.8.19</version>
+		</dependency>
+
+		<!-- SPRING WEBFLUX (WebClient cho Tasklist REST API) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+
 		<!-- TEST -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
