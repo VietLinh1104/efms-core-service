@@ -1,13 +1,180 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_0o1dstj" targetNamespace="http://bpmn.io/schema/bpmn" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
-  <bpmn:process id="Process_15rzwwl" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1" />
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0o1dstj" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="ap-bill-approval" isExecutable="true">
+    <bpmn:userTask id="admin-review" name="[Admin] Review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition externalReference="admin" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_11h5as5</bpmn:incoming>
+      <bpmn:outgoing>Flow_0j2wzt6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="finance-manager-review" name="[Finance Mgr] - Review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition externalReference="finance-manager-review" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_085nojf</bpmn:incoming>
+      <bpmn:outgoing>Flow_0drlygv</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="is-ad-approval" name="Admin Approve?">
+      <bpmn:incoming>Flow_0j2wzt6</bpmn:incoming>
+      <bpmn:outgoing>Flow_0tz6qju</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0ksw58a</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="checkAmout" name="approved?">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_1n4474q</bpmn:incoming>
+      <bpmn:outgoing>Flow_0k2g8qt</bpmn:outgoing>
+      <bpmn:outgoing>Flow_11h5as5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="is-fm-approval" name="approved?">
+      <bpmn:incoming>Flow_0drlygv</bpmn:incoming>
+      <bpmn:outgoing>Flow_1n4474q</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0awp6ft</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="bill-approved">
+      <bpmn:incoming>Flow_185bb4k</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="bill-rejected">
+      <bpmn:incoming>Flow_1o6ef4p</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:startEvent id="bill-submitted">
+      <bpmn:outgoing>Flow_085nojf</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="create-journal-entry" name="Create Journal Entry">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-journal-entry" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0k2g8qt</bpmn:incoming>
+      <bpmn:incoming>Flow_0ksw58a</bpmn:incoming>
+      <bpmn:outgoing>Flow_185bb4k</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_085nojf" sourceRef="bill-submitted" targetRef="finance-manager-review" />
+    <bpmn:sequenceFlow id="Flow_0awp6ft" sourceRef="is-fm-approval" targetRef="notify-rejection">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approved = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0drlygv" sourceRef="finance-manager-review" targetRef="is-fm-approval" />
+    <bpmn:sequenceFlow id="Flow_0j2wzt6" sourceRef="admin-review" targetRef="is-ad-approval" />
+    <bpmn:sequenceFlow id="Flow_0k2g8qt" sourceRef="checkAmout" targetRef="create-journal-entry">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=totalAmount &lt;= 100000000</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0ksw58a" sourceRef="is-ad-approval" targetRef="create-journal-entry">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0tz6qju" sourceRef="is-ad-approval" targetRef="notify-rejection">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approved = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_11h5as5" sourceRef="checkAmout" targetRef="admin-review">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=totalAmount &gt; 100000000</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_185bb4k" sourceRef="create-journal-entry" targetRef="bill-approved" />
+    <bpmn:sequenceFlow id="Flow_1n4474q" sourceRef="is-fm-approval" targetRef="checkAmout">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1o6ef4p" sourceRef="notify-rejection" targetRef="bill-rejected" />
+    <bpmn:serviceTask id="notify-rejection" name="Notify Rejection">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-rejection" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0tz6qju</bpmn:incoming>
+      <bpmn:incoming>Flow_0awp6ft</bpmn:incoming>
+      <bpmn:outgoing>Flow_1o6ef4p</bpmn:outgoing>
+    </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_15rzwwl">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="182" y="162" width="36" height="36" />
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="ap-bill-approval">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="bill-submitted">
+        <dc:Bounds x="182" y="132" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0no66ve_di" bpmnElement="create-journal-entry">
+        <dc:Bounds x="1050" y="110" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_17vildw_di" bpmnElement="bill-approved">
+        <dc:Bounds x="1282" y="132" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1yiak8h_di" bpmnElement="is-ad-approval" isMarkerVisible="true">
+        <dc:Bounds x="915" y="265" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="975" y="283" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1ulikho_di" bpmnElement="finance-manager-review">
+        <dc:Bounds x="300" y="110" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1dq2yph_di" bpmnElement="admin-review">
+        <dc:Bounds x="770" y="250" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_140c3tz_di" bpmnElement="checkAmout" isMarkerVisible="true">
+        <dc:Bounds x="665" y="125" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="664" y="101" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1w6t85d" bpmnElement="is-fm-approval" isMarkerVisible="true">
+        <dc:Bounds x="475" y="125" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="474" y="101" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0ftpqms" bpmnElement="notify-rejection">
+        <dc:Bounds x="1050" y="340" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1a4hhxa" bpmnElement="bill-rejected">
+        <dc:Bounds x="1282" y="362" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_085nojf_di" bpmnElement="Flow_085nojf">
+        <di:waypoint x="218" y="150" />
+        <di:waypoint x="300" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0k2g8qt_di" bpmnElement="Flow_0k2g8qt">
+        <di:waypoint x="715" y="150" />
+        <di:waypoint x="1050" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11h5as5_di" bpmnElement="Flow_11h5as5">
+        <di:waypoint x="690" y="175" />
+        <di:waypoint x="690" y="290" />
+        <di:waypoint x="770" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ksw58a_di" bpmnElement="Flow_0ksw58a">
+        <di:waypoint x="940" y="265" />
+        <di:waypoint x="940" y="150" />
+        <di:waypoint x="1050" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_185bb4k_di" bpmnElement="Flow_185bb4k">
+        <di:waypoint x="1150" y="150" />
+        <di:waypoint x="1282" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0tz6qju_di" bpmnElement="Flow_0tz6qju">
+        <di:waypoint x="940" y="315" />
+        <di:waypoint x="940" y="380" />
+        <di:waypoint x="1050" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1o6ef4p_di" bpmnElement="Flow_1o6ef4p">
+        <di:waypoint x="1150" y="380" />
+        <di:waypoint x="1282" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0j2wzt6_di" bpmnElement="Flow_0j2wzt6">
+        <di:waypoint x="870" y="290" />
+        <di:waypoint x="915" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0drlygv_di" bpmnElement="Flow_0drlygv">
+        <di:waypoint x="400" y="150" />
+        <di:waypoint x="475" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1n4474q_di" bpmnElement="Flow_1n4474q">
+        <di:waypoint x="525" y="150" />
+        <di:waypoint x="665" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0awp6ft_di" bpmnElement="Flow_0awp6ft">
+        <di:waypoint x="500" y="175" />
+        <di:waypoint x="500" y="380" />
+        <di:waypoint x="1050" y="380" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
