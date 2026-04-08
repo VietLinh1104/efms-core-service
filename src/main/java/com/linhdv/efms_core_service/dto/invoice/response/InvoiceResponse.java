@@ -63,6 +63,12 @@ public class InvoiceResponse {
     @Schema(description = "Thời điểm tạo")
     private Instant createdAt;
 
+    @Schema(description = "Trạng thái duyệt (pending, approved, rejected)")
+    private String approvalStatus;
+
+    @Schema(description = "ID xử lý BPMN Camunda")
+    private String camundaProcessId;
+
     @Schema(description = "ID Bút toán liên kết (nếu đã confirm)")
     private UUID journalEntryId;
 

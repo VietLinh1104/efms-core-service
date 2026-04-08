@@ -7,6 +7,7 @@ import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceLineRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
+import io.camunda.client.CamundaClient;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -26,6 +28,7 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
+    private final CamundaClient camundaClient;
 
     @Transactional(readOnly = true)
     public PagedResponse<InvoiceResponse> search(UUID companyId, String type, String status, UUID partnerId, int page, int size) {
@@ -108,6 +111,25 @@ public class InvoiceService {
             throw new IllegalStateException("Hóa đơn phải ở trạng thái draft");
         }
         invoice.setStatus("open");
+
+        if ("AP".equals(invoice.getInvoiceType())) {
+            invoice.setApprovalStatus("pending");
+
+            var result = camundaClient.newCreateInstanceCommand()
+                    .bpmnProcessId("ap-bill-approval")
+                    .latestVersion()
+                    .variables(Map.of(
+                            "invoiceId", invoice.getId().toString(),
+                            "companyId", invoice.getCompanyId().toString(),
+                            "partnerId", invoice.getPartner().getId().toString(),
+                            "totalAmount", invoice.getTotalAmount().doubleValue(),
+                            "submittedBy", invoice.getCreatedBy() != null ? invoice.getCreatedBy().toString() : ""
+                    ))
+                    .send().join();
+
+            invoice.setCamundaProcessId(String.valueOf(result.getProcessInstanceKey()));
+        }
+
         return toResponse(invoiceRepository.save(invoice));
     }
 
@@ -162,6 +184,8 @@ public class InvoiceService {
                 .totalAmount(inv.getTotalAmount())
                 .paidAmount(inv.getPaidAmount())
                 .status(inv.getStatus())
+                .approvalStatus(inv.getApprovalStatus())
+                .camundaProcessId(inv.getCamundaProcessId())
                 .createdBy(inv.getCreatedBy() != null ? inv.getCreatedBy() : null)
                 .createdAt(inv.getCreatedAt())
                 .journalEntryId(inv.getJournalEntry() != null ? inv.getJournalEntry().getId() : null)
