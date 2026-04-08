@@ -24,8 +24,8 @@ Khi Accountant yêu cầu xác nhận hoá đơn (Confirm):
 
 ### B. Phê duyệt Hoá đơn (Approval/Rejection)
 Nếu đóng vai trò hỗ trợ Finance Manager:
-1. Sử dụng **Tasklist API** để tìm task `finance-manager-review` tương ứng với `camunda_process_id`.
-2. Truyền các biến:
+1. Sử dụng **Tasklist API v1** (`/v1/tasks/search`) để tìm ID của task (ở trạng thái `CREATED`) tương ứng với `camunda_process_id`.
+2. Sử dụng **Zeebe REST API v2** (`/v2/user-tasks/{taskId}/completion`) để complete Zeebe User Task, truyền vào các biến dưới dạng flat JSON:
    - `approved`: `true` hoặc `false`.
    - `comment`: Lý do phê duyệt hoặc từ chối.
 3. Nếu Approve: Kiểm tra xem Job Worker `create-journal-entry` có hoàn thành việc tạo bút toán không.

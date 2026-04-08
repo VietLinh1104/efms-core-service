@@ -17,7 +17,7 @@ graph TD
     
     subgraph "BPMN Engine Layer"
         Camunda((Camunda 8 SaaS))
-        Core <-->|gRPC & REST / Job Workers| Camunda
+        Core <-->|gRPC & REST (Zeebe v2, Tasklist v1) / Job Workers| Camunda
     end
 
     subgraph "Data Storage Layer"
@@ -40,7 +40,7 @@ graph TD
     *   Cấp phát JWT Tokens tại `/auth/login`.
 *   **Core Service (`efms-core-service` | Port 8082)**
     *   Hạt nhân xử lý Tài chính - Kế toán: Hóa đơn, Thanh toán, Sổ nhật ký chung, Đối soát ngân hàng.
-    *   Tích hợp **Camunda 8 SaaS** để điều hướng các luồng phê duyệt (Approval Workflow) thông qua Spring Zeebe SDK. Chứa các `@JobWorker` bắt sự kiện từ flow rẽ nhánh.
+    *   Tích hợp **Camunda 8 SaaS** để điều hướng các luồng phê duyệt (Approval Workflow) thông qua Spring Zeebe SDK (gRPC) và REST API (Zeebe REST v2, Tasklist API v1). Chứa các `@JobWorker` bắt sự kiện từ flow rẽ nhánh.
     *   **Context Path:** `/api/core`
     *   Sử dụng chung cấu trúc Users, Company bằng UUIDs do Identity quản lý nhưng **KHÔNG** tạo Foreign Key trực tiếp trên Schema.
 
