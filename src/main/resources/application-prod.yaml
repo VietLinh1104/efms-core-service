@@ -17,6 +17,18 @@ spring:
         jdbc:
           time_zone: Asia/Ho_Chi_Minh
 
+# https://docs.camunda.io/docs/apis-tools/camunda-spring-boot-starter/getting-started/
+# https://docs.camunda.io/docs/apis-tools/camunda-spring-boot-starter/configuration/
+
+camunda:
+  client:
+    mode: saas
+    auth:
+      client-id: ${CAMUNDA_CLIENT_ID}
+      client-secret: ${CAMUNDA_CLIENT_SECRET}
+    cluster-id: ${CAMUNDA_CLUSTER_ID}
+    region: ${CAMUNDA_REGION}
+
 server:
   port: ${SERVER_PORT:8082}
 
@@ -28,3 +40,7 @@ efms:
   app:
     jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000}
+  camunda:
+    tasklist-url: ${CAMUNDA_TASKLIST_URL}
+    zeebe-rest-url: ${CAMUNDA_ZEEBE_REST_URL}
+    approval-threshold: ${CAMUNDA_APPROVAL_THRESHOLD:100000000}
