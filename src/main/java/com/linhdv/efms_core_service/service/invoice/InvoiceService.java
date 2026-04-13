@@ -29,6 +29,7 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
     private final CamundaClient camundaClient;
+    private final com.linhdv.efms_core_service.service.camunda.TasklistApiClient tasklistApiClient;
 
     @Transactional(readOnly = true)
     public PagedResponse<InvoiceResponse> search(UUID companyId, String type, String status, UUID partnerId, int page, int size) {
@@ -141,6 +142,42 @@ public class InvoiceService {
     }
 
     @Transactional
+    public InvoiceResponse approve(UUID id) {
+        Invoice invoice = findOrThrow(id);
+        if (!"open".equals(invoice.getStatus())) {
+            throw new IllegalStateException("Hóa đơn phải ở trạng thái open để phê duyệt");
+        }
+        
+        String taskId = tasklistApiClient.findTaskIdByProcessInstanceKey(invoice.getCamundaProcessId());
+        if (taskId != null) {
+            tasklistApiClient.completeTask(taskId, true, "Approved via InvoiceService");
+            // Status IS NOT updated here. Camunda JobWorker will update the DB.
+        } else {
+            throw new RuntimeException("Không tìm thấy task phê duyệt trên Camunda cho process: " + invoice.getCamundaProcessId());
+        }
+        
+        return toResponse(invoice);
+    }
+
+    @Transactional
+    public InvoiceResponse reject(UUID id) {
+        Invoice invoice = findOrThrow(id);
+        if (!"open".equals(invoice.getStatus())) {
+            throw new IllegalStateException("Hóa đơn phải ở trạng thái open để từ chối");
+        }
+
+        String taskId = tasklistApiClient.findTaskIdByProcessInstanceKey(invoice.getCamundaProcessId());
+        if (taskId != null) {
+            tasklistApiClient.completeTask(taskId, false, "Rejected via InvoiceService");
+            // Status IS NOT updated here. Camunda JobWorker will update the DB.
+        } else {
+            throw new RuntimeException("Không tìm thấy task phê duyệt trên Camunda cho process: " + invoice.getCamundaProcessId());
+        }
+
+        return toResponse(invoice);
+    }
+
+    @Transactional
     public void delete(UUID id) {
         Invoice invoice = findOrThrow(id);
         if (!"draft".equals(invoice.getStatus())) {
@@ -162,6 +199,14 @@ public class InvoiceService {
         return invoiceRepository.findByPartnerIdOrderByInvoiceDateDesc(partnerId)
                 .stream().map(this::toResponse).toList();
     }
+
+    @Transactional(readOnly = true)
+    public InvoiceResponse getByCamundaProcessId(String processId) {
+        return invoiceRepository.findByCamundaProcessId(processId)
+                .map(this::toResponse)
+                .orElse(null);
+    }
+
 
     // ── Helper ────────────────────────────────────────────────────────────────
     private Invoice findOrThrow(UUID id) {

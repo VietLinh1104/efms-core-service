@@ -5,13 +5,13 @@ import com.linhdv.efms_core_service.service.invoice.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
-import java.util.UUID;
+import com.linhdv.efms_core_service.dto.common.ApiResponse;
 
 /**
  * Endpoint dành riêng cho hệ thống để duyệt hoặc từ chối hóa đơn.
- * Endpoint này làm trung gian để Frontend (Next.js) không cần chọc trực tiếp vào Camunda.
+ * Endpoint này làm trung gian để Frontend (Next.js) không cần chọc trực tiếp
+ * vào Camunda.
  */
 @RestController
 @RequestMapping("/api/core/invoices")
@@ -21,39 +21,34 @@ public class InvoiceApprovalController {
     private final TasklistApiClient tasklistApiClient;
     private final InvoiceService invoiceService;
 
-    @PostMapping("/{id}/approve")
-    public ResponseEntity<?> approveInvoice(@PathVariable UUID id, @RequestBody(required = false) Map<String, String> payload) {
-        String procId = invoiceService.getDetail(id).getCamundaProcessId();
-        if (procId == null || procId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Hóa đơn chưa được trigger BPMN process (Không có process id)"));
+    @GetMapping("/tasks")
+    public ResponseEntity<?> getAllTasks() {
+        java.util.List<Map<String, Object>> tasks = tasklistApiClient.searchAllCreatedTasks();
+        if (tasks != null) {
+            for (Map<String, Object> task : tasks) {
+                String processInstanceKey = String.valueOf(task.get("processInstanceKey"));
+                var invoice = invoiceService.getByCamundaProcessId(processInstanceKey);
+                if (invoice != null) {
+                    task.put("invoiceData", invoice);
+                }
+            }
         }
-
-        String comment = (payload != null && payload.containsKey("comment")) ? payload.get("comment") : "Approved via API";
-        String taskId = tasklistApiClient.findTaskIdByProcessInstanceKey(procId);
-        
-        if (taskId == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Không tìm thấy Task đang chờ duyệt hoặc task đã được xử lý xong"));
-        }
-
-        tasklistApiClient.completeTask(taskId, true, comment);
-        return ResponseEntity.ok(Map.of("message", "Đã duyệt hóa đơn thành công thông qua Camunda Tasklist"));
+        return ResponseEntity.ok(ApiResponse.success("Success", tasks));
     }
 
-    @PostMapping("/{id}/reject")
-    public ResponseEntity<?> rejectInvoice(@PathVariable UUID id, @RequestBody(required = false) Map<String, String> payload) {
-        String procId = invoiceService.getDetail(id).getCamundaProcessId();
-        if (procId == null || procId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Hóa đơn chưa được trigger BPMN process"));
+    @GetMapping("/tasks/{taskId}/invoice")
+    public ResponseEntity<?> getInvoiceByTaskId(@PathVariable String taskId) {
+        Map<String, Object> task = tasklistApiClient.getTaskInfo(taskId);
+        if (task == null || !task.containsKey("processInstanceKey")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Task not found or processInstanceKey missing"));
         }
-
-        String comment = (payload != null && payload.containsKey("comment")) ? payload.get("comment") : "Rejected via API";
-        String taskId = tasklistApiClient.findTaskIdByProcessInstanceKey(procId);
-        
-        if (taskId == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Không tìm thấy Task đang chờ duyệt hoặc task đã được xử lý xong"));
+        String processInstanceKey = String.valueOf(task.get("processInstanceKey"));
+        var invoice = invoiceService.getByCamundaProcessId(processInstanceKey);
+        if (invoice != null) {
+            return ResponseEntity.ok(ApiResponse.success(invoice));
         }
-
-        tasklistApiClient.completeTask(taskId, false, comment);
-        return ResponseEntity.ok(Map.of("message", "Đã từ chối hóa đơn"));
+        return ResponseEntity.badRequest()
+                .body(Map.of("message", "Invoice not found for process: " + processInstanceKey));
     }
+
 }

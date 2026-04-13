@@ -67,6 +67,31 @@ public class TasklistApiClient {
         return null;
     }
 
+    public List<Map<String, Object>> searchAllCreatedTasks() {
+        String token = tasklistTokenProvider.getToken();
+        Map<String, Object> searchBody = Map.of(
+                "state", "CREATED"
+        );
+        return webClient.post()
+                .uri(tasklistUrl + "/v1/tasks/search")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(searchBody)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .block();
+    }
+
+    public Map<String, Object> getTaskInfo(String taskId) {
+        String token = tasklistTokenProvider.getToken();
+        return webClient.get()
+                .uri(tasklistUrl + "/v1/tasks/" + taskId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+    }
+
     /**
      * Complete một Zeebe User Task bằng Zeebe REST API v2.
      *

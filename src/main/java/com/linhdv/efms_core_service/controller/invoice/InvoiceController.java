@@ -67,14 +67,13 @@ public class InvoiceController {
     @PostMapping("/{id}/approve")
     @Operation(summary = "Duyệt hóa đơn mua hàng (AP) — AP Approve")
     public ResponseEntity<ApiResponse<InvoiceResponse>> approve(@PathVariable UUID id) {
-        // Tương tự logic confirm cho hoá đơn AP
-        return ResponseEntity.ok(ApiResponse.success("Duyệt hóa đơn thành công", invoiceService.confirm(id)));
+        return ResponseEntity.ok(ApiResponse.success("Duyệt hóa đơn thành công", invoiceService.approve(id)));
     }
 
     @PostMapping("/{id}/reject")
     @Operation(summary = "Từ chối duyệt hóa đơn (AP) — AP Reject")
     public ResponseEntity<ApiResponse<InvoiceResponse>> reject(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Từ chối duyệt hóa đơn", invoiceService.cancel(id)));
+        return ResponseEntity.ok(ApiResponse.success("Từ chối duyệt hóa đơn", invoiceService.reject(id)));
     }
 
     @PostMapping("/{id}/cancel")
