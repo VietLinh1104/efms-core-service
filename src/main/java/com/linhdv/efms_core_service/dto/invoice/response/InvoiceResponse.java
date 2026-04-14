@@ -72,6 +72,12 @@ public class InvoiceResponse {
     @Schema(description = "ID Bút toán liên kết (nếu đã confirm)")
     private UUID journalEntryId;
 
+    @Schema(description = "ID Task duyệt (nếu có)")
+    private String taskId;
+
+    @Schema(description = "Tên Task duyệt (nếu có)")
+    private String taskName;
+
     @Schema(description = "Chi tiết các dòng hóa đơn (chỉ có khi gọi detail)")
     private List<InvoiceLineResponse> lines;
 }

@@ -207,6 +207,50 @@ public class InvoiceService {
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
+    public PagedResponse<InvoiceResponse> getAllApprovalTasks(int page, int size) {
+        List<Map<String, Object>> tasks = tasklistApiClient.searchAllCreatedTasks();
+        List<InvoiceResponse> responses = new java.util.ArrayList<>();
+        if (tasks != null) {
+            for (Map<String, Object> task : tasks) {
+                String processInstanceKey = String.valueOf(task.get("processInstanceKey"));
+                Invoice invoice = invoiceRepository.findByCamundaProcessId(processInstanceKey).orElse(null);
+                if (invoice != null) {
+                    InvoiceResponse resp = toResponse(invoice);
+                    resp.setTaskId(String.valueOf(task.get("id")));
+                    resp.setTaskName(String.valueOf(task.get("name")));
+                    responses.add(resp);
+                }
+            }
+        }
+        
+        int totalElements = responses.size();
+        int fromIndex = page * size;
+        int toIndex = Math.min(fromIndex + size, totalElements);
+        
+        List<InvoiceResponse> pagedResponses = new java.util.ArrayList<>();
+        if (fromIndex <= totalElements) {
+            pagedResponses = responses.subList(fromIndex, toIndex);
+        }
+        
+        return PagedResponse.of(pagedResponses, page, size, totalElements);
+    }
+
+    @Transactional(readOnly = true)
+    public InvoiceResponse getInvoiceTaskDetail(String taskId) {
+        Map<String, Object> task = tasklistApiClient.getTaskInfo(taskId);
+        if (task == null || !task.containsKey("processInstanceKey")) {
+            throw new EntityNotFoundException("Task not found or processInstanceKey missing");
+        }
+        String processInstanceKey = String.valueOf(task.get("processInstanceKey"));
+        Invoice invoice = invoiceRepository.findByCamundaProcessId(processInstanceKey)
+                .orElseThrow(() -> new EntityNotFoundException("Invoice not found for process: " + processInstanceKey));
+
+        InvoiceResponse resp = toResponse(invoice);
+        resp.setTaskId(String.valueOf(task.get("id")));
+        resp.setTaskName(String.valueOf(task.get("name")));
+        return resp;
+    }
 
     // ── Helper ────────────────────────────────────────────────────────────────
     private Invoice findOrThrow(UUID id) {
