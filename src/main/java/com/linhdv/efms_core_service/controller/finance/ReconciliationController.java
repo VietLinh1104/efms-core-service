@@ -25,35 +25,34 @@ public class ReconciliationController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách các giao dịch NH đang đợi ghép / chờ đối chiếu")
-    public ResponseEntity<ApiResponse<List<BankTransactionResponse>>> getPendingMatches(
+    public ApiResponse<List<BankTransactionResponse>> getPendingMatches(
             @RequestParam UUID bankAccountId) {
-        return ResponseEntity.ok(ApiResponse.success(reconciliationService.getUnreconciledTransactions(bankAccountId)));
+        return ApiResponse.success(reconciliationService.getUnreconciledTransactions(bankAccountId));
     }
 
     @PostMapping("/match")
     @Operation(summary = "Ghép thủ công 1 GD ngân hàng với 1 Bút toán trên Hệ thống")
-    public ResponseEntity<ApiResponse<BankTransactionResponse>> manualMatch(
+    public ApiResponse<BankTransactionResponse> manualMatch(
             @Valid @RequestBody ReconcileMatchRequest req) {
-        return ResponseEntity.ok(ApiResponse.success("Khớp giao dịch thành công", reconciliationService.match(req)));
+        return ApiResponse.success("Khớp giao dịch thành công", reconciliationService.match(req));
     }
 
     @PostMapping("/auto-match")
     @Operation(summary = "Tính năng tự động tìm kiếm và Match hàng loạt các GD có Amount trùng và cùng Time")
-    public ResponseEntity<ApiResponse<List<BankTransactionResponse>>> autoMatch(@RequestParam UUID bankAccountId) {
-        return ResponseEntity.ok(
-                ApiResponse.success("Đã chạy Auto-match (Rule-based)", reconciliationService.autoMatch(bankAccountId)));
+    public ApiResponse<List<BankTransactionResponse>> autoMatch(@RequestParam UUID bankAccountId) {
+        return 
+                ApiResponse.success("Đã chạy Auto-match (Rule-based)", reconciliationService.autoMatch(bankAccountId));
     }
 
     @PostMapping("/unmatch/{bankTransactionId}")
     @Operation(summary = "Gỡ / Xóa link khớp của giao dịch (Un-reconcile)")
-    public ResponseEntity<ApiResponse<BankTransactionResponse>> unmatch(@PathVariable UUID bankTransactionId) {
-        return ResponseEntity
-                .ok(ApiResponse.success("Gỡ đối chiếu thành công", reconciliationService.unmatch(bankTransactionId)));
+    public ApiResponse<BankTransactionResponse> unmatch(@PathVariable UUID bankTransactionId) {
+        return ApiResponse.success("Gỡ đối chiếu thành công", reconciliationService.unmatch(bankTransactionId));
     }
 
     @GetMapping("/summary")
     @Operation(summary = "Báo cáo Tổng hợp tình trạng Số dư & Giao dịch")
-    public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getSummary(@RequestParam UUID bankAccountId) {
-        return ResponseEntity.ok(ApiResponse.success(reconciliationService.getSummary(bankAccountId)));
+    public ApiResponse<ReconciliationSummaryResponse> getSummary(@RequestParam UUID bankAccountId) {
+        return ApiResponse.success(reconciliationService.getSummary(bankAccountId));
     }
 }

@@ -27,7 +27,7 @@ public class BankTransactionController {
 
     @GetMapping
     @Operation(summary = "Danh sách giao dịch ngân hàng")
-    public ResponseEntity<ApiResponse<PagedResponse<BankTransactionResponse>>> list(
+    public ApiResponse<PagedResponse<BankTransactionResponse>> list(
             @RequestParam UUID companyId,
             @RequestParam(required = false) UUID bankAccountId,
             @RequestParam(required = false) String type,
@@ -36,34 +36,33 @@ public class BankTransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.success(
-                bankTransactionService.search(companyId, bankAccountId, type, status, fromDate, toDate, page, size)));
+        return ApiResponse.success(
+                bankTransactionService.search(companyId, bankAccountId, type, status, fromDate, toDate, page, size));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết một giao dịch ngân hàng")
-    public ResponseEntity<ApiResponse<BankTransactionResponse>> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(bankTransactionService.getById(id)));
+    public ApiResponse<BankTransactionResponse> getById(@PathVariable UUID id) {
+        return ApiResponse.success(bankTransactionService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo một giao dịch thủ công trên hệ thống")
-    public ResponseEntity<ApiResponse<BankTransactionResponse>> create(
+    public ApiResponse<BankTransactionResponse> create(
             @Valid @RequestBody CreateBankTransactionRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Thêm giao dịch thủ công thành công", bankTransactionService.create(req)));
+        return ApiResponse.success("Thêm giao dịch thủ công thành công", bankTransactionService.create(req));
     }
 
     @PostMapping("/import")
     @Operation(summary = "Import bản sao kê (Bank Statement) từ file CSV/Excel", description = "Đang phát triển - TODO: sử dụng MultiPartFile upload")
-    public ResponseEntity<ApiResponse<String>> importData() {
-        return ResponseEntity.ok(ApiResponse.success("import đang được phát triển..."));
+    public ApiResponse<String> importData() {
+        return ApiResponse.success("import đang được phát triển...");
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xoá giao dịch (Chỉ khi CHƯA được đối chiếu - unreconciled)")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ApiResponse<Void> delete(@PathVariable UUID id) {
         bankTransactionService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Xoá giao dịch thành công"));
+        return ApiResponse.success("Xoá giao dịch thành công");
     }
 }

@@ -26,30 +26,29 @@ public class FiscalPeriodController {
 
     @GetMapping
     @Operation(summary = "Danh sách kỳ kế toán")
-    public ResponseEntity<ApiResponse<List<FiscalPeriodResponse>>> list(
+    public ApiResponse<List<FiscalPeriodResponse>> list(
             @Parameter(description = "UUID công ty") @RequestParam UUID companyId) {
-        return ResponseEntity.ok(ApiResponse.success(fiscalPeriodService.list(companyId)));
+        return ApiResponse.success(fiscalPeriodService.list(companyId));
     }
 
     @PostMapping
     @Operation(summary = "Tạo kỳ kế toán mới")
-    public ResponseEntity<ApiResponse<FiscalPeriodResponse>> create(
+    public ApiResponse<FiscalPeriodResponse> create(
             @Valid @RequestBody CreateFiscalPeriodRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Tạo kỳ kế toán thành công", fiscalPeriodService.create(req)));
+        return ApiResponse.success("Tạo kỳ kế toán thành công", fiscalPeriodService.create(req));
     }
 
     @PostMapping("/{id}/close")
     @Operation(summary = "Đóng kỳ kế toán")
-    public ResponseEntity<ApiResponse<FiscalPeriodResponse>> close(
+    public ApiResponse<FiscalPeriodResponse> close(
             @Parameter(description = "UUID kỳ kế toán") @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Đóng kỳ kế toán thành công", fiscalPeriodService.close(id)));
+        return ApiResponse.success("Đóng kỳ kế toán thành công", fiscalPeriodService.close(id));
     }
 
     @PostMapping("/{id}/reopen")
     @Operation(summary = "Mở lại kỳ kế toán (Admin)")
-    public ResponseEntity<ApiResponse<FiscalPeriodResponse>> reopen(
+    public ApiResponse<FiscalPeriodResponse> reopen(
             @Parameter(description = "UUID kỳ kế toán") @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success("Mở lại kỳ kế toán thành công", fiscalPeriodService.reopen(id)));
+        return ApiResponse.success("Mở lại kỳ kế toán thành công", fiscalPeriodService.reopen(id));
     }
 }

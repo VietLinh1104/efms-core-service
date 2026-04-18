@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,7 +23,7 @@ public class TrialBalanceController {
 
     @GetMapping
     @Operation(summary = "Lấy Trial Balance theo kỳ hoặc khoảng ngày")
-    public ResponseEntity<ApiResponse<TrialBalanceResponse>> get(
+    public ApiResponse<TrialBalanceResponse> get(
             @Parameter(description = "UUID công ty") @RequestParam UUID companyId,
             @Parameter(description = "UUID kỳ kế toán (ưu tiên nếu có)") @RequestParam(required = false) UUID periodId,
             @Parameter(description = "Ngày bắt đầu (yyyy-MM-dd) — dùng khi không có periodId") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
@@ -33,16 +32,16 @@ public class TrialBalanceController {
                 ? trialBalanceService.getByPeriod(companyId, periodId)
                 : trialBalanceService.getByDateRange(companyId, fromDate, toDate);
 
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ApiResponse.success(data);
     }
 
     @GetMapping("/export")
     @Operation(summary = "Xuất Trial Balance (Excel / PDF)", description = "TODO: implement export")
-    public ResponseEntity<ApiResponse<String>> export(
+    public ApiResponse<String> export(
             @RequestParam UUID companyId,
             @RequestParam(required = false) UUID periodId,
             @Parameter(description = "Định dạng xuất: excel hoặc pdf") @RequestParam(defaultValue = "excel") String format) {
         // TODO: tích hợp Apache POI / iText để export
-        return ResponseEntity.ok(ApiResponse.success("Export đang được phát triển"));
+        return ApiResponse.success("Export đang được phát triển");
     }
 }

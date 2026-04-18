@@ -31,53 +31,52 @@ public class PartnerController {
 
     @GetMapping
     @Operation(summary = "Danh sách đối tác (phân trang)")
-    public ResponseEntity<ApiResponse<PagedResponse<PartnerResponse>>> list(
+    public ApiResponse<PagedResponse<PartnerResponse>> list(
             @RequestParam UUID companyId,
             @Parameter(description = "Loại (customer/vendor)") @RequestParam(required = false) String type,
             @Parameter(description = "Từ khóa tìm kiếm") @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.success(partnerService.search(companyId, type, search, page, size)));
+        return ApiResponse.success(partnerService.search(companyId, type, search, page, size));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết đối tác")
-    public ResponseEntity<ApiResponse<PartnerResponse>> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(partnerService.getById(id)));
+    public ApiResponse<PartnerResponse> getById(@PathVariable UUID id) {
+        return ApiResponse.success(partnerService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo đối tác mới")
-    public ResponseEntity<ApiResponse<PartnerResponse>> create(@Valid @RequestBody CreatePartnerRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Thêm thành công", partnerService.create(req)));
+    public ApiResponse<PartnerResponse> create(@Valid @RequestBody CreatePartnerRequest req) {
+        return ApiResponse.success("Thêm thành công", partnerService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật đối tác")
-    public ResponseEntity<ApiResponse<PartnerResponse>> update(
+    public ApiResponse<PartnerResponse> update(
             @PathVariable UUID id, @Valid @RequestBody CreatePartnerRequest req) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công", partnerService.update(id, req)));
+        return ApiResponse.success("Cập nhật thành công", partnerService.update(id, req));
     }
 
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Bật / tắt đối tác")
-    public ResponseEntity<ApiResponse<PartnerResponse>> toggleActive(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(partnerService.toggleActive(id)));
+    public ApiResponse<PartnerResponse> toggleActive(@PathVariable UUID id) {
+        return ApiResponse.success(partnerService.toggleActive(id));
     }
 
     @GetMapping("/{id}/invoices")
     @Operation(summary = "Lịch sử hóa đơn của đối tác")
-    public ResponseEntity<ApiResponse<List<InvoiceResponse>>> getPartnerInvoices(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.getByPartner(id)));
+    public ApiResponse<List<InvoiceResponse>> getPartnerInvoices(@PathVariable UUID id) {
+        return ApiResponse.success(invoiceService.getByPartner(id));
     }
 
     @GetMapping("/{id}/balance")
     @Operation(summary = "Số dư công nợ của đối tác")
-    public ResponseEntity<ApiResponse<BigDecimal>> getBalance(@PathVariable UUID id) {
+    public ApiResponse<BigDecimal> getBalance(@PathVariable UUID id) {
         // Có thể tính từ invoiceService / Payment hoặc trực tiếp từ journalLine cho
         // chuẩn xác:
         // Tạm thời trả về 0 để mô tả khung DTO.
-        return ResponseEntity.ok(ApiResponse.success(BigDecimal.ZERO));
+        return ApiResponse.success(BigDecimal.ZERO);
     }
 }

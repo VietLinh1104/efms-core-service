@@ -30,61 +30,60 @@ public class AccountController {
 
     @GetMapping
     @Operation(summary = "Danh sách tài khoản", description = "Lấy danh sách tài khoản theo công ty. Truyền tree=true để lấy dạng cây.")
-    public ResponseEntity<ApiResponse<List<AccountResponse>>> list(
+    public ApiResponse<List<AccountResponse>> list(
             @Parameter(description = "UUID công ty") @RequestParam UUID companyId,
             @Parameter(description = "Trả về dạng cây nếu true") @RequestParam(defaultValue = "false") boolean tree) {
         List<AccountResponse> data = tree
                 ? accountService.listTree(companyId)
                 : accountService.listAll(companyId);
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ApiResponse.success(data);
     }
 
     @GetMapping("/page")
     @Operation(summary = "Danh sách tài khoản", description = "Lấy danh sách tài khoản theo công ty (pagination).")
-    public ResponseEntity<ApiResponse<PagedResponse<AccountResponse>>> listPage(
+    public ApiResponse<PagedResponse<AccountResponse>> listPage(
             @Parameter(description = "UUID công ty") @RequestParam UUID companyId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PagedResponse<AccountResponse> data = accountService.listAllPage(companyId, page, size);
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ApiResponse.success(data);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết tài khoản")
-    public ResponseEntity<ApiResponse<AccountResponse>> getById(
+    public ApiResponse<AccountResponse> getById(
             @Parameter(description = "UUID tài khoản") @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(accountService.getById(id)));
+        return ApiResponse.success(accountService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo tài khoản mới")
-    public ResponseEntity<ApiResponse<AccountResponse>> create(
+    public ApiResponse<AccountResponse> create(
             @Valid @RequestBody CreateAccountRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Tạo tài khoản thành công", accountService.create(req)));
+        return ApiResponse.success("Tạo tài khoản thành công", accountService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật tài khoản")
-    public ResponseEntity<ApiResponse<AccountResponse>> update(
+    public ApiResponse<AccountResponse> update(
             @Parameter(description = "UUID tài khoản") @PathVariable UUID id,
             @Valid @RequestBody CreateAccountRequest req) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công", accountService.update(id, req)));
+        return ApiResponse.success("Cập nhật thành công", accountService.update(id, req));
     }
 
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Bật / tắt trạng thái tài khoản")
-    public ResponseEntity<ApiResponse<AccountResponse>> toggleActive(
+    public ApiResponse<AccountResponse> toggleActive(
             @Parameter(description = "UUID tài khoản") @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(accountService.toggleActive(id)));
+        return ApiResponse.success(accountService.toggleActive(id));
     }
 
     @GetMapping("/{id}/balance")
     @Operation(summary = "Số dư tài khoản theo kỳ hoặc khoảng ngày")
-    public ResponseEntity<ApiResponse<AccountBalanceResponse>> getBalance(
+    public ApiResponse<AccountBalanceResponse> getBalance(
             @Parameter(description = "UUID tài khoản") @PathVariable UUID id,
             @Parameter(description = "Ngày bắt đầu (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @Parameter(description = "Ngày kết thúc (yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        return ResponseEntity.ok(ApiResponse.success(accountService.getBalance(id, fromDate, toDate)));
+        return ApiResponse.success(accountService.getBalance(id, fromDate, toDate));
     }
 }

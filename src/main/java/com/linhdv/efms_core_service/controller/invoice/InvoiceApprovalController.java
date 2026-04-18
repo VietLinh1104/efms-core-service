@@ -20,16 +20,16 @@ public class InvoiceApprovalController {
     private final InvoiceService invoiceService;
 
     @GetMapping("/tasks")
-    public ResponseEntity<ApiResponse<PagedResponse<InvoiceResponse>>> getAllTasks(
+    public ApiResponse<PagedResponse<InvoiceResponse>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(ApiResponse.success("Success", invoiceService.getAllApprovalTasks(page, size)));
+        return ApiResponse.success("Success", invoiceService.getAllApprovalTasks(page, size));
     }
 
     @GetMapping("/tasks/{taskId}/invoice")
-    public ResponseEntity<ApiResponse<InvoiceResponse>> getInvoiceByTaskId(@PathVariable String taskId) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.getInvoiceTaskDetail(taskId)));
+    public ApiResponse<InvoiceResponse> getInvoiceByTaskId(@PathVariable String taskId) {
+        return ApiResponse.success(invoiceService.getInvoiceTaskDetail(taskId));
     }
 
 }

@@ -26,65 +26,62 @@ public class PaymentController {
 
     @GetMapping
     @Operation(summary = "Danh sách phiếu thanh toán (Thu/Chi)")
-    public ResponseEntity<ApiResponse<PagedResponse<PaymentResponse>>> list(
+    public ApiResponse<PagedResponse<PaymentResponse>> list(
             @RequestParam UUID companyId,
             @RequestParam(required = false) String paymentType, // in / out
             @RequestParam(required = false) UUID partnerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.success(
-                paymentService.search(companyId, paymentType, partnerId, page, size)));
+        return ApiResponse.success(
+                paymentService.search(companyId, paymentType, partnerId, page, size));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết Phiếu thanh toán kèm các khoản phân bổ")
-    public ResponseEntity<ApiResponse<PaymentResponse>> getDetail(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(paymentService.getDetail(id)));
+    public ApiResponse<PaymentResponse> getDetail(@PathVariable UUID id) {
+        return ApiResponse.success(paymentService.getDetail(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo thanh toán mới")
-    public ResponseEntity<ApiResponse<PaymentResponse>> create(@Valid @RequestBody CreatePaymentRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Lưu thanh toán thành công", paymentService.create(req)));
+    public ApiResponse<PaymentResponse> create(@Valid @RequestBody CreatePaymentRequest req) {
+        return ApiResponse.success("Lưu thanh toán thành công", paymentService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật phiếu thanh toán")
-    public ResponseEntity<ApiResponse<PaymentResponse>> update(
+    public ApiResponse<PaymentResponse> update(
             @PathVariable UUID id, @Valid @RequestBody CreatePaymentRequest req) {
         // ... Logic xóa xong tạo lại (cách áp mãnh dạn nhát để duy trì logic)
         paymentService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thành công", paymentService.create(req)));
+        return ApiResponse.success("Cập nhật thành công", paymentService.create(req));
     }
 
     @PostMapping("/{id}/allocate")
     @Operation(summary = "Phân bổ số tiền của payment vào 1 Inovice (AR/AP)")
-    public ResponseEntity<ApiResponse<PaymentResponse>> allocate(
+    public ApiResponse<PaymentResponse> allocate(
             @PathVariable UUID id, @Valid @RequestBody AllocatePaymentRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Phân bổ chứng từ thành công", paymentService.allocate(id, req)));
+        return ApiResponse.success("Phân bổ chứng từ thành công", paymentService.allocate(id, req));
     }
 
     @DeleteMapping("/{id}/allocate/{invoiceId}")
     @Operation(summary = "Gỡ / Xóa phân bổ payment vào invoice")
-    public ResponseEntity<ApiResponse<String>> removeAllocation(
+    public ApiResponse<String> removeAllocation(
             @PathVariable UUID id, @PathVariable UUID invoiceId) {
         // TODO: xoá dòng InvoicePayment và cộng lại công nợ Invoice
-        return ResponseEntity.ok(ApiResponse.success("Đã xóa phân bổ thanh toán."));
+        return ApiResponse.success("Đã xóa phân bổ thanh toán.");
     }
 
     @PostMapping("/{id}/post")
     @Operation(summary = "Ghi sổ bút toán tổng hợp (Post payment → GL)")
-    public ResponseEntity<ApiResponse<PaymentResponse>> postPayment(@PathVariable UUID id) {
-        return ResponseEntity
-                .ok(ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.getDetail(id)));
+    public ApiResponse<PaymentResponse> postPayment(@PathVariable UUID id) {
+        return ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.getDetail(id));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xoá hoàn toàn thanh toán (chỉ khi chưa Post GL)")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
+    public ApiResponse<Void> delete(@PathVariable UUID id) {
         paymentService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("Xoá thanh toán thành công"));
+        return ApiResponse.success("Xoá thanh toán thành công");
     }
 }
