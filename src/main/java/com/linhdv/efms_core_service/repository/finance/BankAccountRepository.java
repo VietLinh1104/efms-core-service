@@ -13,13 +13,17 @@ import java.util.UUID;
 @Repository
 public interface BankAccountRepository extends JpaRepository<BankAccount, UUID> {
 
-    @Query("""
-            SELECT b FROM BankAccount b
-            WHERE b.companyId = :companyId
-              AND (:type IS NULL OR b.type = :type)
-              AND (:search IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(b.accountNumber) LIKE LOWER(CONCAT('%', :search, '%')))
-            ORDER BY b.createdAt DESC
-            """)
+    @Query(value = """
+            SELECT * FROM public.bank_accounts b
+            WHERE b.company_id = :companyId
+              AND (:type IS NULL OR b.type = CAST(:type AS VARCHAR))
+              AND (
+                :search IS NULL
+                OR lower(b.name) LIKE lower(CAST(CONCAT('%', :search, '%') AS VARCHAR))
+                OR lower(b.account_number) LIKE lower(CAST(CONCAT('%', :search, '%') AS VARCHAR))
+              )
+            ORDER BY b.created_at DESC
+            """, nativeQuery = true)
     Page<BankAccount> search(
             @Param("companyId") UUID companyId,
             @Param("type") String type,
