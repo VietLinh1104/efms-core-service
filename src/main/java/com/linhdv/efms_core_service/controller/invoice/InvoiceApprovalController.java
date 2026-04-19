@@ -2,7 +2,6 @@ package com.linhdv.efms_core_service.controller.invoice;
 
 import com.linhdv.efms_core_service.service.invoice.InvoiceService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.linhdv.efms_core_service.dto.common.ApiResponse;
 import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
@@ -22,8 +21,7 @@ public class InvoiceApprovalController {
     @GetMapping("/tasks")
     public ApiResponse<PagedResponse<InvoiceResponse>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.success("Success", invoiceService.getAllApprovalTasks(page, size));
     }
 

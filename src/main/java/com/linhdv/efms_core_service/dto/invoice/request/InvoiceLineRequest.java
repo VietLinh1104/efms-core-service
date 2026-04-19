@@ -13,6 +13,9 @@ import java.util.UUID;
 @Schema(description = "Payload dòng hóa đơn")
 public class InvoiceLineRequest {
 
+    @Schema(description = "UUID dòng hóa đơn (null = tạo mới, có giá trị = cập nhật)")
+    private UUID id;
+
     @NotNull
     @Schema(description = "UUID tài khoản doanh thu (AR) hoặc chi phí (AP)")
     private UUID accountId;

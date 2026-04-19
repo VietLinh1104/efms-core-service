@@ -1,7 +1,8 @@
 package com.linhdv.efms_core_service.service.invoice;
 
 import com.linhdv.efms_core_service.entity.*;
-import com.linhdv.efms_core_service.dto.invoice.request.CreateInvoiceRequest;
+import com.linhdv.efms_core_service.dto.invoice.request.InvoiceRequest;
+import com.linhdv.efms_core_service.dto.invoice.request.InvoiceLineRequest;
 import com.linhdv.efms_core_service.dto.invoice.response.InvoiceLineResponse;
 import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceLineRepository;
@@ -50,7 +51,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public InvoiceResponse create(CreateInvoiceRequest req) {
+    public InvoiceResponse create(InvoiceRequest req) {
         Partner partner = new Partner(); partner.setId(req.getPartnerId());
 
         Invoice invoice = new Invoice();
@@ -64,45 +65,52 @@ public class InvoiceService {
         invoice.setExchangeRate(req.getExchangeRate() != null ? req.getExchangeRate() : BigDecimal.ONE);
         invoice.setStatus("draft");
         invoice.setCreatedAt(Instant.now());
-        
-        // Cập nhật sau
         invoice.setSubtotal(BigDecimal.ZERO);
         invoice.setTaxAmount(BigDecimal.ZERO);
         invoice.setTotalAmount(BigDecimal.ZERO);
         invoice.setPaidAmount(BigDecimal.ZERO);
 
         Invoice saved = invoiceRepository.save(invoice);
+        BigDecimal[] totals = saveLines(saved, req.getLines(), false);
 
-        BigDecimal currentSubtotal = BigDecimal.ZERO;
-        BigDecimal currentTax      = BigDecimal.ZERO;
+        saved.setSubtotal(totals[0]);
+        saved.setTaxAmount(totals[1]);
+        saved.setTotalAmount(totals[0].add(totals[1]));
+        return toResponse(invoiceRepository.save(saved));
+    }
 
-        for (var lineReq : req.getLines()) {
-            InvoiceLine line = new InvoiceLine();
-            line.setInvoice(saved);
-            
-            Account acc = new Account(); acc.setId(lineReq.getAccountId());
-            line.setAccount(acc);
-            line.setDescription(lineReq.getDescription());
-            line.setQuantity(lineReq.getQuantity());
-            line.setUnitPrice(lineReq.getUnitPrice());
-            line.setTaxRate(lineReq.getTaxRate());
-            
-            BigDecimal lineAmount = lineReq.getQuantity().multiply(lineReq.getUnitPrice());
-            BigDecimal lineTax    = lineAmount.multiply(lineReq.getTaxRate()).divide(new BigDecimal("100"));
-            
-            line.setTaxAmount(lineTax);
-            line.setAmount(lineAmount);
-            invoiceLineRepository.save(line);
-
-            currentSubtotal = currentSubtotal.add(lineAmount);
-            currentTax      = currentTax.add(lineTax);
+    @Transactional
+    public InvoiceResponse update(UUID id, InvoiceRequest req) {
+        Invoice invoice = findOrThrow(id);
+        if (!"draft".equals(invoice.getStatus())) {
+            throw new IllegalStateException("Chỉ cập nhật được hóa đơn ở trạng thái draft");
         }
 
-        saved.setSubtotal(currentSubtotal);
-        saved.setTaxAmount(currentTax);
-        saved.setTotalAmount(currentSubtotal.add(currentTax));
+        // -- Cập nhật header --
+        Partner partner = new Partner(); partner.setId(req.getPartnerId());
+        invoice.setPartner(partner);
+        invoice.setInvoiceNumber(req.getInvoiceNumber());
+        invoice.setInvoiceDate(req.getInvoiceDate());
+        invoice.setDueDate(req.getDueDate());
+        if (req.getCurrencyCode() != null) invoice.setCurrencyCode(req.getCurrencyCode());
+        if (req.getExchangeRate() != null) invoice.setExchangeRate(req.getExchangeRate());
 
-        return toResponse(invoiceRepository.save(saved));
+        // -- Xoá lines cũ không còn trong request rồi upsert --
+        java.util.Set<UUID> incomingIds = req.getLines().stream()
+                .map(InvoiceLineRequest::getId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        List<InvoiceLine> toDelete = invoiceLineRepository.findByInvoiceIdOrderByIdAsc(id).stream()
+                .filter(l -> !incomingIds.contains(l.getId()))
+                .toList();
+        invoiceLineRepository.deleteAll(toDelete);
+
+        BigDecimal[] totals = saveLines(invoice, req.getLines(), true);
+        invoice.setSubtotal(totals[0]);
+        invoice.setTaxAmount(totals[1]);
+        invoice.setTotalAmount(totals[0].add(totals[1]));
+
+        return toResponse(invoiceRepository.save(invoice));
     }
 
     @Transactional
@@ -294,5 +302,46 @@ public class InvoiceService {
                 .taxAmount(line.getTaxAmount())
                 .amount(line.getAmount())
                 .build();
+    }
+
+    /**
+     * Lưu/cập nhật danh sách lines cho một invoice.
+     * @param invoice    Invoice entity đã được persist
+     * @param lineReqs   Danh sách line request từ client
+     * @param allowUpsert true → cho phép update line có id; false → luôn tạo mới (dùng cho create)
+     * @return BigDecimal[]{subtotal, taxTotal}
+     */
+    private BigDecimal[] saveLines(Invoice invoice, List<InvoiceLineRequest> lineReqs, boolean allowUpsert) {
+        BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal taxTotal = BigDecimal.ZERO;
+
+        for (InvoiceLineRequest lineReq : lineReqs) {
+            BigDecimal lineAmount = lineReq.getQuantity().multiply(lineReq.getUnitPrice());
+            BigDecimal lineTax    = lineAmount.multiply(lineReq.getTaxRate()).divide(new BigDecimal("100"));
+
+            InvoiceLine line;
+            if (allowUpsert && lineReq.getId() != null) {
+                line = invoiceLineRepository.findById(lineReq.getId())
+                        .orElseThrow(() -> new EntityNotFoundException("Invoice line không tồn tại: " + lineReq.getId()));
+            } else {
+                line = new InvoiceLine();
+                line.setInvoice(invoice);
+            }
+
+            Account acc = new Account(); acc.setId(lineReq.getAccountId());
+            line.setAccount(acc);
+            line.setDescription(lineReq.getDescription());
+            line.setQuantity(lineReq.getQuantity());
+            line.setUnitPrice(lineReq.getUnitPrice());
+            line.setTaxRate(lineReq.getTaxRate());
+            line.setAmount(lineAmount);
+            line.setTaxAmount(lineTax);
+            invoiceLineRepository.save(line);
+
+            subtotal = subtotal.add(lineAmount);
+            taxTotal = taxTotal.add(lineTax);
+        }
+
+        return new BigDecimal[]{subtotal, taxTotal};
     }
 }

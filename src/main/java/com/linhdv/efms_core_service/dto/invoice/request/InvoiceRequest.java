@@ -14,20 +14,29 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
-@Schema(description = "Payload tạo/cập nhật hóa đơn")
-public class CreateInvoiceRequest {
+@Schema(description = "Payload tạo / cập nhật hóa đơn")
+public class InvoiceRequest {
 
+    /**
+     * Bắt buộc khi tạo mới (POST), bỏ qua khi cập nhật (PUT).
+     */
     @NotBlank
     @Size(max = 5)
-    @Schema(description = "Loại hóa đơn (AR: thu, AP: chi)", example = "AR")
+    @Schema(description = "Loại hóa đơn (AR: thu, AP: chi) — bắt buộc khi tạo mới", example = "AP")
     private String invoiceType;
+
+    /**
+     * Bắt buộc khi tạo mới (POST), bỏ qua khi cập nhật (PUT).
+     */
+    @Schema(description = "UUID công ty — bắt buộc khi tạo mới")
+    private UUID companyId;
 
     @NotNull
     @Schema(description = "UUID đối tác")
     private UUID partnerId;
 
     @Size(max = 100)
-    @Schema(description = "Số hóa đơn (nếu có)", example = "INV-2025-001")
+    @Schema(description = "Số hóa đơn (tùy chọn)", example = "INV-2025-001")
     private String invoiceNumber;
 
     @NotNull
@@ -44,11 +53,8 @@ public class CreateInvoiceRequest {
     @Schema(description = "Tỷ giá quy đổi (mặc định 1)", example = "1.000000")
     private BigDecimal exchangeRate = BigDecimal.ONE;
 
-    @Schema(description = "UUID công ty sở hữu")
-    private UUID companyId;
-
     @NotEmpty
     @Valid
-    @Schema(description = "Danh sách dòng hóa đơn")
+    @Schema(description = "Danh sách dòng hóa đơn — id == null: tạo mới, id != null: cập nhật dòng đó")
     private List<InvoiceLineRequest> lines;
 }
