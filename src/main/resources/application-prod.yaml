@@ -30,7 +30,7 @@ camunda:
     region: ${CAMUNDA_REGION}
 
 server:
-  port: ${SERVER_PORT:8082}
+  port: ${PORT:8080}
 
 logging:
   pattern:
