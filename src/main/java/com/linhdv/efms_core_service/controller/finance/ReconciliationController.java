@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,8 +39,7 @@ public class ReconciliationController {
     @PostMapping("/auto-match")
     @Operation(summary = "Tính năng tự động tìm kiếm và Match hàng loạt các GD có Amount trùng và cùng Time")
     public ApiResponse<List<BankTransactionResponse>> autoMatch(@RequestParam UUID bankAccountId) {
-        return 
-                ApiResponse.success("Đã chạy Auto-match (Rule-based)", reconciliationService.autoMatch(bankAccountId));
+        return ApiResponse.success("Đã chạy Auto-match (Rule-based)", reconciliationService.autoMatch(bankAccountId));
     }
 
     @PostMapping("/unmatch/{bankTransactionId}")
