@@ -10,10 +10,8 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
-# Define environment variables with default values
-ENV SERVER_PORT=8082
+# Render.com injects PORT at runtime; default to 8080
 ENV SPRING_PROFILES_ACTIVE=prod
 
-EXPOSE 8082
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Use shell form so $PORT is expanded at runtime by Render
+ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]
