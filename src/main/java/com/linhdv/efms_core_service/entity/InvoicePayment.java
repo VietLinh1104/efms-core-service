@@ -13,10 +13,10 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "invoice_payments", schema = "public", uniqueConstraints = {@UniqueConstraint(name = "invoice_payments_invoice_id_payment_id_key",
-        columnNames = {
+@Table(name = "invoice_payments", schema = "core", uniqueConstraints = {
+        @UniqueConstraint(name = "invoice_payments_invoice_id_payment_id_key", columnNames = {
                 "invoice_id",
-                "payment_id"})})
+                "payment_id" }) })
 public class InvoicePayment {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -40,6 +40,5 @@ public class InvoicePayment {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

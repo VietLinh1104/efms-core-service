@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "bank_accounts", schema = "public")
+@Table(name = "bank_accounts", schema = "core")
 public class BankAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

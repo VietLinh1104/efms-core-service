@@ -16,7 +16,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "journal_lines", schema = "public")
+@Table(name = "journal_lines", schema = "core")
 public class JournalLine {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -67,6 +67,5 @@ public class JournalLine {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }

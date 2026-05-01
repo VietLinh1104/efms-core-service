@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "invoice_lines", schema = "public")
+@Table(name = "invoice_lines", schema = "core")
 public class InvoiceLine {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -59,6 +59,5 @@ public class InvoiceLine {
     @ColumnDefault("0")
     @Column(name = "amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal amount;
-
 
 }

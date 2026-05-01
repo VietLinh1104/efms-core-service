@@ -13,8 +13,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "accounts", schema = "public", uniqueConstraints = {@UniqueConstraint(name = "accounts_company_id_code_key",
-        columnNames = {"company_id", "code"})})
+@Table(name = "accounts", schema = "core", uniqueConstraints = {
+        @UniqueConstraint(name = "accounts_company_id_code_key", columnNames = { "company_id", "code" }) })
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

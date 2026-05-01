@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "fiscal_periods", schema = "public")
+@Table(name = "fiscal_periods", schema = "core")
 public class FiscalPeriod {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "bank_transactions", schema = "public")
+@Table(name = "bank_transactions", schema = "core")
 public class BankTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -59,6 +59,5 @@ public class BankTransaction {
     @ColumnDefault("now()")
     @Column(name = "created_at")
     private Instant createdAt;
-
 
 }
