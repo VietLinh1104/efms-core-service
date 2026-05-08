@@ -13,7 +13,7 @@ import com.linhdv.efms_core_service.wrapper.PagedResponse;
  * vào Camunda.
  */
 @RestController
-@RequestMapping("/api/core/invoices")
+@RequestMapping("/v1/invoice-tasks")
 @RequiredArgsConstructor
 public class InvoiceApprovalController {
     private final InvoiceService invoiceService;
