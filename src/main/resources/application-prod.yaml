@@ -41,6 +41,6 @@ efms:
     jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000}
   camunda:
-    tasklist-url: ${CAMUNDA_TASKLIST_URL}
-    zeebe-rest-url: ${CAMUNDA_ZEEBE_REST_URL}
+    tasklist-url: ${CAMUNDA_TASKLIST_URL:https://${camunda.client.region}.tasklist.camunda.io/${camunda.client.cluster-id}}
+    zeebe-rest-url: ${CAMUNDA_ZEEBE_REST_URL:https://${camunda.client.region}.zeebe.camunda.io/${camunda.client.cluster-id}}
     approval-threshold: ${CAMUNDA_APPROVAL_THRESHOLD:100000000}

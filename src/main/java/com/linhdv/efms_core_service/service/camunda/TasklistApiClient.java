@@ -1,5 +1,6 @@
 package com.linhdv.efms_core_service.service.camunda;
 
+import com.linhdv.efms_core_service.config.CamundaProperties;
 import com.linhdv.efms_core_service.config.TasklistTokenProvider;
 import com.linhdv.efms_core_service.config.ZeebeTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,8 @@ import java.util.Map;
  * REST Client tích hợp Camunda 8 SaaS.
  *
  * - findTaskIdByProcessInstanceKey: Dùng Tasklist REST API v1 (search tasks)
- * - completeTask: Dùng Zeebe REST API v2 — bắt buộc với Zeebe User Task (<zeebe:userTask />)
+ * - completeTask: Dùng Zeebe REST API v2 — bắt buộc với Zeebe User Task
+ * (<zeebe:userTask />)
  *
  * NOTE: Tasklist V1 API không support complete cho Zeebe User Task.
  * Phải dùng POST /v2/user-tasks/{key}/completion với Zeebe REST API.
@@ -31,12 +33,7 @@ public class TasklistApiClient {
     private final WebClient webClient;
     private final TasklistTokenProvider tasklistTokenProvider;
     private final ZeebeTokenProvider zeebeTokenProvider;
-
-    @Value("${efms.camunda.tasklist-url}")
-    private String tasklistUrl;
-
-    @Value("${efms.camunda.zeebe-rest-url}")
-    private String zeebeRestUrl;
+    private final CamundaProperties camundaProperties;
 
     /**
      * Tìm ID (userTaskKey) của Zeebe User Task đang ở trạng thái CREATED
@@ -44,11 +41,11 @@ public class TasklistApiClient {
      */
     public String findTaskIdByProcessInstanceKey(String processInstanceKey) {
         String token = tasklistTokenProvider.getToken();
+        String tasklistUrl = camundaProperties.getTasklistUrl();
 
         Map<String, Object> searchBody = Map.of(
                 "processInstanceKey", processInstanceKey,
-                "state", "CREATED"
-        );
+                "state", "CREATED");
 
         List<Map<String, Object>> response = webClient.post()
                 .uri(tasklistUrl + "/v1/tasks/search")
@@ -56,11 +53,13 @@ public class TasklistApiClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(searchBody)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
+                })
                 .block();
 
         if (response != null && !response.isEmpty()) {
-            log.info("🔍 Tìm thấy {} task đang chờ duyệt cho processInstanceKey: {}", response.size(), processInstanceKey);
+            log.info("🔍 Tìm thấy {} task đang chờ duyệt cho processInstanceKey: {}", response.size(),
+                    processInstanceKey);
             return (String) response.get(0).get("id");
         }
         log.warn("⚠️ Không tìm thấy task nào ở trạng thái CREATED cho processInstanceKey: {}", processInstanceKey);
@@ -69,26 +68,29 @@ public class TasklistApiClient {
 
     public List<Map<String, Object>> searchAllCreatedTasks() {
         String token = tasklistTokenProvider.getToken();
+        String tasklistUrl = camundaProperties.getTasklistUrl();
         Map<String, Object> searchBody = Map.of(
-                "state", "CREATED"
-        );
+                "state", "CREATED");
         return webClient.post()
                 .uri(tasklistUrl + "/v1/tasks/search")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(searchBody)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
+                })
                 .block();
     }
 
     public Map<String, Object> getTaskInfo(String taskId) {
         String token = tasklistTokenProvider.getToken();
+        String tasklistUrl = camundaProperties.getTasklistUrl();
         return webClient.get()
                 .uri(tasklistUrl + "/v1/tasks/" + taskId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+                })
                 .block();
     }
 
@@ -99,18 +101,19 @@ public class TasklistApiClient {
      * Variables: flat JSON map (không phải list như Tasklist v1)
      * Token audience: zeebe.camunda.io
      *
-     * @param taskId  userTaskKey (numeric string) lấy từ Tasklist search
+     * @param taskId   userTaskKey (numeric string) lấy từ Tasklist search
      * @param approved kết quả phê duyệt
      * @param comment  ghi chú
      */
     public void completeTask(String taskId, boolean approved, String comment) {
         String token = zeebeTokenProvider.getToken();
+        String zeebeRestUrl = camundaProperties.getZeebeRestUrl();
 
-        // Zeebe REST API v2: variables là flat JSON object, không phải List<{name,value}>
+        // Zeebe REST API v2: variables là flat JSON object, không phải
+        // List<{name,value}>
         Map<String, Object> variables = Map.of(
                 "approved", approved,
-                "comment", comment == null ? "" : comment
-        );
+                "comment", comment == null ? "" : comment);
 
         Map<String, Object> completeBody = Map.of("variables", variables);
 
@@ -126,10 +129,11 @@ public class TasklistApiClient {
                     .onStatus(
                             status -> status.is4xxClientError() || status.is5xxServerError(),
                             resp -> resp.bodyToMono(String.class).map(body -> {
-                                log.error("❌ Zeebe complete task thất bại: HTTP {} — Response: {}", resp.statusCode(), body);
-                                return new RuntimeException("Zeebe complete task failed [" + resp.statusCode() + "]: " + body);
-                            })
-                    )
+                                log.error("❌ Zeebe complete task thất bại: HTTP {} — Response: {}", resp.statusCode(),
+                                        body);
+                                return new RuntimeException(
+                                        "Zeebe complete task failed [" + resp.statusCode() + "]: " + body);
+                            }))
                     .bodyToMono(Void.class)
                     .block();
 

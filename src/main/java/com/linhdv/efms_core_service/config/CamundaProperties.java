@@ -25,6 +25,9 @@ public class CamundaProperties {
     /** Base URL của Camunda Tasklist REST API */
     private String tasklistUrl;
 
+    /** Base URL của Zeebe REST API (v2) */
+    private String zeebeRestUrl;
+
     /**
      * Ngưỡng số tiền (VND) cần cấp duyệt bổ sung từ Admin.
      * Mặc định 100.000.000 VND.
