@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -24,6 +26,7 @@ public class PaymentController {
 
     @GetMapping
     @Operation(summary = "Danh sách phiếu thanh toán (Thu/Chi)")
+    @PreAuthorize("hasAuthority('PAYMENTS:READ')")
     public ApiResponse<PagedResponse<PaymentResponse>> list(
             @RequestParam UUID companyId,
             @RequestParam(required = false) String paymentType, // in / out
@@ -36,18 +39,21 @@ public class PaymentController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết Phiếu thanh toán kèm các khoản phân bổ")
+    @PreAuthorize("hasAuthority('PAYMENTS:READ')")
     public ApiResponse<PaymentResponse> getDetail(@PathVariable UUID id) {
         return ApiResponse.success(paymentService.getDetail(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo thanh toán mới")
+    @PreAuthorize("hasAuthority('PAYMENTS:CREATE')")
     public ApiResponse<PaymentResponse> create(@Valid @RequestBody CreatePaymentRequest req) {
         return ApiResponse.success("Lưu thanh toán thành công", paymentService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật phiếu thanh toán")
+    @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
     public ApiResponse<PaymentResponse> update(
             @PathVariable UUID id, @Valid @RequestBody CreatePaymentRequest req) {
         // ... Logic xóa xong tạo lại (cách áp mãnh dạn nhát để duy trì logic)
@@ -57,6 +63,7 @@ public class PaymentController {
 
     @PostMapping("/{id}/allocate")
     @Operation(summary = "Phân bổ số tiền của payment vào 1 Inovice (AR/AP)")
+    @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
     public ApiResponse<PaymentResponse> allocate(
             @PathVariable UUID id, @Valid @RequestBody AllocatePaymentRequest req) {
         return ApiResponse.success("Phân bổ chứng từ thành công", paymentService.allocate(id, req));
@@ -64,6 +71,7 @@ public class PaymentController {
 
     @DeleteMapping("/{id}/allocate/{invoiceId}")
     @Operation(summary = "Gỡ / Xóa phân bổ payment vào invoice")
+    @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
     public ApiResponse<String> removeAllocation(
             @PathVariable UUID id, @PathVariable UUID invoiceId) {
         // TODO: xoá dòng InvoicePayment và cộng lại công nợ Invoice
@@ -72,12 +80,14 @@ public class PaymentController {
 
     @PostMapping("/{id}/post")
     @Operation(summary = "Ghi sổ bút toán tổng hợp (Post payment → GL)")
+    @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
     public ApiResponse<PaymentResponse> postPayment(@PathVariable UUID id) {
         return ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.getDetail(id));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xoá hoàn toàn thanh toán (chỉ khi chưa Post GL)")
+    @PreAuthorize("hasAuthority('PAYMENTS:DELETE')")
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         paymentService.delete(id);
         return ApiResponse.success("Xoá thanh toán thành công");

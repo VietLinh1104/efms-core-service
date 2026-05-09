@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class InvoiceController {
 
     @GetMapping
     @Operation(summary = "Danh sách hóa đơn (có phân trang và filter)")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<PagedResponse<InvoiceResponse>> listInvoices(
             @RequestParam UUID companyId,
             @RequestParam(required = false) String invoiceType,
@@ -37,18 +40,21 @@ public class InvoiceController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết hóa đơn kèm các dòng lines")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<InvoiceResponse> getInvoiceDetail(@PathVariable UUID id) {
         return ApiResponse.success(invoiceService.getDetail(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo Hóa đơn (draft)")
+    @PreAuthorize("hasAuthority('INVOICE:CREATE')")
     public ApiResponse<InvoiceResponse> createDraftInvoice(@Valid @RequestBody InvoiceRequest req) {
         return ApiResponse.success("Lưu hóa đơn thành công", invoiceService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật Hóa đơn (chỉ khi draft)")
+    @PreAuthorize("hasAuthority('INVOICE:UPDATE')")
     public ApiResponse<InvoiceResponse> updateDraftInvoice(
             @PathVariable UUID id, @Valid @RequestBody InvoiceRequest req) {
         return ApiResponse.success("Cập nhật thành công", invoiceService.update(id, req));
@@ -56,30 +62,35 @@ public class InvoiceController {
 
     @PostMapping("/{id}/confirm")
     @Operation(summary = "Xác nhận hóa đơn (draft → open)")
+    @PreAuthorize("hasAuthority('INVOICE:UPDATE')")
     public ApiResponse<InvoiceResponse> confirmInvoiceToProcess(@PathVariable UUID id) {
         return ApiResponse.success("Xác nhận thành công", invoiceService.confirm(id));
     }
 
     @PostMapping("/{id}/approve")
     @Operation(summary = "Duyệt hóa đơn mua hàng (AP) — AP Approve")
+    @PreAuthorize("hasAuthority('INVOICE:FINANCE_MANAGER_REVIEW')")
     public ApiResponse<InvoiceResponse> approveInvoice(@PathVariable UUID id) {
         return ApiResponse.success("Duyệt hóa đơn thành công", invoiceService.approve(id));
     }
 
     @PostMapping("/{id}/reject")
     @Operation(summary = "Từ chối duyệt hóa đơn (AP) — AP Reject")
+    @PreAuthorize("hasAuthority('INVOICE:FINANCE_MANAGER_REVIEW')")
     public ApiResponse<InvoiceResponse> rejectInvoice(@PathVariable UUID id) {
         return ApiResponse.success("Từ chối duyệt hóa đơn", invoiceService.reject(id));
     }
 
     @PostMapping("/{id}/cancel")
     @Operation(summary = "Huỷ hóa đơn")
+    @PreAuthorize("hasAuthority('INVOICE:CANCEL')")
     public ApiResponse<InvoiceResponse> cancelInvoice(@PathVariable UUID id) {
         return ApiResponse.success("Huỷ hóa đơn thành công", invoiceService.cancel(id));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xoá hoàn toàn hóa đơn (chỉ draft)")
+    @PreAuthorize("hasAuthority('INVOICE:DELETE')")
     public ApiResponse<Void> deleteInvoice(@PathVariable UUID id) {
         invoiceService.delete(id);
         return ApiResponse.success("Xoá hóa đơn thành công");
@@ -88,18 +99,21 @@ public class InvoiceController {
     // Các tính năng phân bổ, overdue báo cáo.
     @GetMapping("/overdue")
     @Operation(summary = "Lấy các hóa đơn quá hạn chưa thanh toán (AR/AP)")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<List<InvoiceResponse>> getOverdueInvoices(@RequestParam UUID companyId) {
         return ApiResponse.success(invoiceService.getOverdue(companyId));
     }
 
     @GetMapping("/aging")
     @Operation(summary = "Lấy Báo cáo Tuổi nợ AR/AP")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<String> getAgingReport(@RequestParam UUID companyId) {
         return ApiResponse.success("Tính năng Đang phát triển. (Tuổi nợ: 0-30, 31-60, 61-90, over)");
     }
 
     @GetMapping("/export")
     @Operation(summary = "Xuất danh sách Hóa đơn")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<String> exportInvoiceList() {
         return ApiResponse.success("Export đang được phát triển...");
     }

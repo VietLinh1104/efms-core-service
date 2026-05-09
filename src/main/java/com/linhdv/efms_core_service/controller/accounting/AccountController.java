@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -38,6 +39,7 @@ public class AccountController {
     }
 
     @GetMapping("/page")
+    @PreAuthorize("hasAuthority('ACCOUNTS:READ')")
     @Operation(summary = "Danh sách tài khoản", description = "Lấy danh sách tài khoản theo công ty (pagination).")
     public ApiResponse<PagedResponse<AccountResponse>> listPage(
             @Parameter(description = "UUID công ty") @RequestParam UUID companyId,

@@ -2,6 +2,8 @@ package com.linhdv.efms_core_service.controller.invoice;
 
 import com.linhdv.efms_core_service.service.invoice.InvoiceService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.linhdv.efms_core_service.dto.common.ApiResponse;
 import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
@@ -19,6 +21,7 @@ public class InvoiceApprovalController {
     private final InvoiceService invoiceService;
 
     @GetMapping("/tasks")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<PagedResponse<InvoiceResponse>> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -26,6 +29,7 @@ public class InvoiceApprovalController {
     }
 
     @GetMapping("/tasks/{taskId}/invoice")
+    @PreAuthorize("hasAuthority('INVOICE:READ')")
     public ApiResponse<InvoiceResponse> getInvoiceByTaskId(@PathVariable String taskId) {
         return ApiResponse.success(invoiceService.getInvoiceTaskDetail(taskId));
     }

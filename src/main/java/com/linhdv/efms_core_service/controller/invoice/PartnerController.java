@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -29,6 +31,7 @@ public class PartnerController {
 
     @GetMapping
     @Operation(summary = "Danh sách đối tác (phân trang)")
+    @PreAuthorize("hasAuthority('PARTNERS:READ')")
     public ApiResponse<PagedResponse<PartnerResponse>> list(
             @RequestParam UUID companyId,
             @Parameter(description = "Loại (customer/vendor)") @RequestParam(required = false) String type,
@@ -40,37 +43,44 @@ public class PartnerController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết đối tác")
+    @PreAuthorize("hasAuthority('PARTNERS:READ')")
     public ApiResponse<PartnerResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(partnerService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo đối tác mới")
+    @PreAuthorize("hasAuthority('PARTNERS:CREATE')")
     public ApiResponse<PartnerResponse> create(@Valid @RequestBody CreatePartnerRequest req) {
         return ApiResponse.success("Thêm thành công", partnerService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật đối tác")
+    @PreAuthorize("hasAuthority('PARTNERS:UPDATE')")
     public ApiResponse<PartnerResponse> update(
             @PathVariable UUID id, @Valid @RequestBody CreatePartnerRequest req) {
         return ApiResponse.success("Cập nhật thành công", partnerService.update(id, req));
     }
 
     @PatchMapping("/{id}/toggle-active")
+    @PreAuthorize("hasAuthority('PARTNERS:UPDATE')")
     @Operation(summary = "Bật / tắt đối tác")
+
     public ApiResponse<PartnerResponse> toggleActive(@PathVariable UUID id) {
         return ApiResponse.success(partnerService.toggleActive(id));
     }
 
     @GetMapping("/{id}/invoices")
     @Operation(summary = "Lịch sử hóa đơn của đối tác")
+    @PreAuthorize("hasAuthority('PARTNERS:READ')")
     public ApiResponse<List<InvoiceResponse>> getPartnerInvoices(@PathVariable UUID id) {
         return ApiResponse.success(invoiceService.getByPartner(id));
     }
 
     @GetMapping("/{id}/balance")
     @Operation(summary = "Số dư công nợ của đối tác")
+    @PreAuthorize("hasAuthority('PARTNERS:READ')")
     public ApiResponse<BigDecimal> getBalance(@PathVariable UUID id) {
         // Có thể tính từ invoiceService / Payment hoặc trực tiếp từ journalLine cho
         // chuẩn xác:

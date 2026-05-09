@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -25,6 +27,7 @@ public class BankAccountController {
 
     @GetMapping
     @Operation(summary = "Danh sách tài khoản ngân hàng")
+    @PreAuthorize("hasAuthority('BANKACC:READ')")
     public ApiResponse<PagedResponse<BankAccountResponse>> list(
             @RequestParam UUID companyId,
             @Parameter(description = "Loại (checking, savings)") @RequestParam(required = false) String type,
@@ -36,18 +39,21 @@ public class BankAccountController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết tài khoản ngân hàng")
+    @PreAuthorize("hasAuthority('BANKACC:READ')")
     public ApiResponse<BankAccountResponse> getById(@PathVariable UUID id) {
         return ApiResponse.success(bankAccountService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo tài khoản ngân hàng")
+    @PreAuthorize("hasAuthority('BANKACC:CREATE')")
     public ApiResponse<BankAccountResponse> create(@Valid @RequestBody CreateBankAccountRequest req) {
         return ApiResponse.success("Mở tài khoản ngân hàng thành công", bankAccountService.create(req));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật tài khoản ngân hàng")
+    @PreAuthorize("hasAuthority('BANKACC:UPDATE')")
     public ApiResponse<BankAccountResponse> update(
             @PathVariable UUID id, @Valid @RequestBody CreateBankAccountRequest req) {
         return ApiResponse.success("Cập nhật thành công", bankAccountService.update(id, req));
@@ -55,12 +61,14 @@ public class BankAccountController {
 
     @PatchMapping("/{id}/toggle-active")
     @Operation(summary = "Bật/Tắt trạng thái hoạt động tài khoản")
+    @PreAuthorize("hasAuthority('BANKACC:UPDATE')")
     public ApiResponse<BankAccountResponse> toggleActive(@PathVariable UUID id) {
         return ApiResponse.success("Thay đổi trạng thái thành công", bankAccountService.toggleActive(id));
     }
 
     @GetMapping("/{id}/balance")
     @Operation(summary = "Lấy Số dư tài khoản hiện tại")
+    @PreAuthorize("hasAuthority('BANKACC:READ')")
     public ApiResponse<BigDecimal> getBalance(@PathVariable UUID id) {
         BankAccountResponse ba = bankAccountService.getById(id);
         // Tạm thời trả list zero or opening_balance. Sum từ BankTransaction.amount sẽ
