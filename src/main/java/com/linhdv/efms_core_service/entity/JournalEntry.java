@@ -26,10 +26,9 @@ public class JournalEntry {
     @Column(name = "company_id", nullable = false)
     private UUID companyId;
 
-    // @ManyToOne nội bộ Core DB — fiscal_periods cùng schema
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "period_id")
-    private FiscalPeriod period;
+    // period_id vẫn tồn tại ở DB schema nhưng không map ORM (Fiscal Period bị lược bỏ ở phạm vi đồ án)
+    @Column(name = "period_id")
+    private UUID periodId;
 
     @NotNull
     @Column(name = "entry_date", nullable = false)

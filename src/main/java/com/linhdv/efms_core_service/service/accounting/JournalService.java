@@ -1,6 +1,5 @@
 package com.linhdv.efms_core_service.service.accounting;
 
-import com.linhdv.efms_core_service.dto.accounting.request.CreateJournalRequest;
 import com.linhdv.efms_core_service.dto.accounting.response.JournalEntryResponse;
 import com.linhdv.efms_core_service.dto.accounting.response.JournalLineResponse;
 import com.linhdv.efms_core_service.repository.accounting.JournalEntryRepository;
@@ -14,12 +13,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * JournalService — Read-only (Đồ án scope).
+ * Bút toán chỉ được tạo tự động bởi hệ thống (qua Camunda Worker hoặc PaymentService).
+ * Không hỗ trợ tạo/sửa/xóa bút toán thủ công.
+ */
 @Service
 @RequiredArgsConstructor
 public class JournalService {
@@ -60,104 +62,11 @@ public class JournalService {
         return resp;
     }
 
-    // ── Tạo mới (draft) ───────────────────────────────────────────────────
-
-    @Transactional
-    public JournalEntryResponse create(CreateJournalRequest req) {
-        validateBalance(req);
-
-        JournalEntry je = new JournalEntry();
-        je.setCompanyId(req.getCompanyId());
-        je.setEntryDate(req.getEntryDate());
-        je.setReference(req.getReference());
-        je.setDescription(req.getDescription());
-        je.setStatus("draft");
-        je.setSource("manual");
-        je.setCreatedAt(Instant.now());
-
-        if (req.getPeriodId() != null) {
-            FiscalPeriod period = new FiscalPeriod();
-            period.setId(req.getPeriodId());
-            je.setPeriod(period);
-        }
-
-        JournalEntry saved = journalEntryRepository.save(je);
-
-        // Tạo các dòng bút toán
-        req.getLines().forEach(lineReq -> {
-            JournalLine line = new JournalLine();
-            line.setJournalEntry(saved);
-            Account acc = new Account();
-            acc.setId(lineReq.getAccountId());
-            line.setAccount(acc);
-            line.setDebit(lineReq.getDebit());
-            line.setCredit(lineReq.getCredit());
-            line.setCurrencyCode(lineReq.getCurrencyCode() != null ? lineReq.getCurrencyCode() : "VND");
-            line.setAmountCurrency(lineReq.getAmountCurrency());
-            line.setExchangeRate(lineReq.getExchangeRate() != null ? lineReq.getExchangeRate() : BigDecimal.ONE);
-            line.setDescription(lineReq.getDescription());
-            line.setCreatedAt(Instant.now());
-            journalLineRepository.save(line);
-        });
-
-        return toResponse(saved);
-    }
-
-    // ── Post chứng từ ─────────────────────────────────────────────────────
-
-    @Transactional
-    public JournalEntryResponse post(UUID id) {
-        JournalEntry je = findOrThrow(id);
-        if (!"draft".equals(je.getStatus())) {
-            throw new IllegalStateException("Chỉ có thể post chứng từ ở trạng thái draft");
-        }
-        je.setStatus("posted");
-        je.setPostedAt(Instant.now());
-        return toResponse(journalEntryRepository.save(je));
-    }
-
-    // ── Huỷ chứng từ ──────────────────────────────────────────────────────
-
-    @Transactional
-    public JournalEntryResponse cancel(UUID id) {
-        JournalEntry je = findOrThrow(id);
-        if ("cancelled".equals(je.getStatus())) {
-            throw new IllegalStateException("Chứng từ đã bị huỷ");
-        }
-        je.setStatus("cancelled");
-        return toResponse(journalEntryRepository.save(je));
-    }
-
-    // ── Xoá (chỉ draft) ───────────────────────────────────────────────────
-
-    @Transactional
-    public void delete(UUID id) {
-        JournalEntry je = findOrThrow(id);
-        if (!"draft".equals(je.getStatus())) {
-            throw new IllegalStateException("Chỉ có thể xoá chứng từ ở trạng thái draft");
-        }
-        journalEntryRepository.delete(je);
-    }
-
-    // ── Validate ──────────────────────────────────────────────────────────
-
-    private void validateBalance(CreateJournalRequest req) {
-        BigDecimal totalDebit = req.getLines().stream().map(l -> l.getDebit() != null ? l.getDebit() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalCredit = req.getLines().stream()
-                .map(l -> l.getCredit() != null ? l.getCredit() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (totalDebit.compareTo(totalCredit) != 0) {
-            throw new IllegalArgumentException(
-                    "Chứng từ không cân đối: Tổng Nợ (" + totalDebit + ") ≠ Tổng Có (" + totalCredit + ")");
-        }
-    }
-
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private JournalEntry findOrThrow(UUID id) {
         return journalEntryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Chứng từ không tồn tại: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Bút toán không tồn tại: " + id));
     }
 
     private JournalEntryResponse toResponse(JournalEntry je) {
@@ -168,9 +77,8 @@ public class JournalService {
                 .description(je.getDescription())
                 .status(je.getStatus())
                 .source(je.getSource())
-                .periodId(je.getPeriod() != null ? je.getPeriod().getId() : null)
-                .periodName(je.getPeriod() != null ? je.getPeriod().getName() : null)
-                .createdBy(je.getCreatedBy() != null ? je.getCreatedBy(): null)
+                .periodId(je.getPeriodId())
+                .createdBy(je.getCreatedBy() != null ? je.getCreatedBy() : null)
                 .postedBy(je.getPostedBy() != null ? je.getPostedBy() : null)
                 .postedAt(je.getPostedAt())
                 .createdAt(je.getCreatedAt())

@@ -32,11 +32,8 @@ public class JournalEntryResponse {
     @Schema(description = "Nguồn tạo (manual, invoice, payment, ...)", example = "manual")
     private String source;
 
-    @Schema(description = "ID kỳ kế toán")
+    @Schema(description = "ID kỳ kế toán (tham chiếu, không hiển thị trong UI)")
     private UUID periodId;
-
-    @Schema(description = "Tên kỳ kế toán", example = "Tháng 01/2025")
-    private String periodName;
 
     @Schema(description = "Người tạo")
     private UUID createdBy;

@@ -1,6 +1,5 @@
 package com.linhdv.efms_core_service.controller.accounting;
 
-import com.linhdv.efms_core_service.dto.accounting.request.CreateJournalRequest;
 import com.linhdv.efms_core_service.dto.accounting.response.JournalEntryResponse;
 import com.linhdv.efms_core_service.service.accounting.JournalService;
 import com.linhdv.efms_core_service.dto.common.ApiResponse;
@@ -8,7 +7,6 @@ import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +14,21 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/**
+ * Journal Controller — Read-only (Đồ án scope).
+ * Chứng từ được tự động sinh bởi hệ thống khi Hóa đơn được duyệt hoặc Thanh toán được Post.
+ * Không cho phép tạo/sửa/xóa chứng từ thủ công.
+ */
 @RestController
 @RequestMapping("/v1/accounting/journals")
 @RequiredArgsConstructor
-@Tag(name = "Journal Entries", description = "Quản lý chứng từ kế toán")
+@Tag(name = "Journal Entries", description = "Danh sách bút toán kế toán (Read-only)")
 public class JournalController {
 
     private final JournalService journalService;
 
     @GetMapping
-    @Operation(summary = "Danh sách chứng từ (có phân trang, lọc theo trạng thái / ngày)")
+    @Operation(summary = "Danh sách bút toán (phân trang, lọc theo trạng thái / ngày)")
     public ApiResponse<PagedResponse<JournalEntryResponse>> list(
             @Parameter(description = "UUID công ty") @RequestParam UUID companyId,
             @Parameter(description = "Lọc theo trạng thái: draft, posted, cancelled") @RequestParam(required = false) String status,
@@ -38,48 +41,9 @@ public class JournalController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Chi tiết chứng từ kèm các dòng bút toán")
+    @Operation(summary = "Chi tiết bút toán kèm các dòng Nợ/Có")
     public ApiResponse<JournalEntryResponse> getDetail(
-            @Parameter(description = "UUID chứng từ") @PathVariable UUID id) {
+            @Parameter(description = "UUID bút toán") @PathVariable UUID id) {
         return ApiResponse.success(journalService.getDetail(id));
-    }
-
-    @PostMapping
-    @Operation(summary = "Tạo chứng từ mới (trạng thái draft)", description = "Tổng Nợ phải bằng Tổng Có mới tạo được")
-    public ApiResponse<JournalEntryResponse> create(
-            @Valid @RequestBody CreateJournalRequest req) {
-        return ApiResponse.success("Tạo chứng từ thành công", journalService.create(req));
-    }
-
-    @PutMapping("/{id}")
-    @Operation(summary = "Cập nhật chứng từ (chỉ áp dụng khi ở trạng thái draft)")
-    public ApiResponse<JournalEntryResponse> update(
-            @Parameter(description = "UUID chứng từ") @PathVariable UUID id,
-            @Valid @RequestBody CreateJournalRequest req) {
-        // Xoá lines cũ, tạo lại — dùng JournalService
-        journalService.delete(id);
-        return ApiResponse.success("Cập nhật thành công", journalService.create(req));
-    }
-
-    @PostMapping("/{id}/post")
-    @Operation(summary = "Post chứng từ (draft → posted)")
-    public ApiResponse<JournalEntryResponse> post(
-            @Parameter(description = "UUID chứng từ") @PathVariable UUID id) {
-        return ApiResponse.success("Post chứng từ thành công", journalService.post(id));
-    }
-
-    @PostMapping("/{id}/cancel")
-    @Operation(summary = "Huỷ chứng từ")
-    public ApiResponse<JournalEntryResponse> cancel(
-            @Parameter(description = "UUID chứng từ") @PathVariable UUID id) {
-        return ApiResponse.success("Huỷ chứng từ thành công", journalService.cancel(id));
-    }
-
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Xoá chứng từ (chỉ áp dụng khi ở trạng thái draft)")
-    public ApiResponse<Void> delete(
-            @Parameter(description = "UUID chứng từ") @PathVariable UUID id) {
-        journalService.delete(id);
-        return ApiResponse.success("Xoá chứng từ thành công");
     }
 }

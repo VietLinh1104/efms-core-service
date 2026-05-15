@@ -38,9 +38,9 @@ public class NotifyRejectionWorker {
             if (invoice != null) {
                 invoice.setApprovalStatus("rejected");
                 invoiceRepository.save(invoice);
-                log.info("✅ [Worker] Đã cập nhật trạng thái hóa đơn {} thành REJECTED", invoiceId);
+                log.info("[Worker] Đã cập nhật trạng thái hóa đơn {} thành REJECTED", invoiceId);
             } else {
-                log.error("❌ [Worker] Không tìm thấy hóa đơn ID: {}", invoiceId);
+                log.error("[Worker] Không tìm thấy hóa đơn ID: {}", invoiceId);
             }
         } catch (Exception e) {
             log.error("Lỗi khi xử lý NotifyRejectionWorker: {}", e.getMessage(), e);
