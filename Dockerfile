@@ -14,4 +14,4 @@ COPY --from=build /app/target/*.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=prod
 
 # Use shell form so $PORT is expanded at runtime by Render
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]
+ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8082}"]
