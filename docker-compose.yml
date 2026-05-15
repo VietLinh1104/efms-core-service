@@ -8,13 +8,17 @@ services:
       - "8082:8082"
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
-      - DB_URL=${DB_URL:-jdbc:postgresql://core-db:5432/efms_core_db}
-      - DB_USERNAME=${DB_USERNAME:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-yourpassword}
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_MS=${JWT_EXPIRATION_MS:-86400000}
-    depends_on:
-      - core-db
+      - CAMUNDA_CLIENT_ID=${CAMUNDA_CLIENT_ID}
+      - CAMUNDA_CLIENT_SECRET=${CAMUNDA_CLIENT_SECRET}
+      - CAMUNDA_CLUSTER_ID=${CAMUNDA_CLUSTER_ID}
+      - CAMUNDA_REGION=${CAMUNDA_REGION}
+    # depends_on:
+    #   - core-db
 
   core-db:
     image: postgres:16-alpine
