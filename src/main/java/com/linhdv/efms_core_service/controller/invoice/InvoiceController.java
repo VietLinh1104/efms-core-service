@@ -68,17 +68,21 @@ public class InvoiceController {
     }
 
     @PostMapping("/{id}/approve")
-    @Operation(summary = "Duyệt hóa đơn mua hàng (AP) — AP Approve")
+    @Operation(summary = "Duyệt hóa đơn mua hàng (AP) — AP Approve. Cập nhật approval_status=approved trực tiếp vào DB")
     @PreAuthorize("hasAuthority('INVOICE:FINANCE_MANAGER_REVIEW')")
-    public ApiResponse<InvoiceResponse> approveInvoice(@PathVariable UUID id) {
-        return ApiResponse.success("Duyệt hóa đơn thành công", invoiceService.approve(id));
+    public ApiResponse<InvoiceResponse> approveInvoice(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String comment) {
+        return ApiResponse.success("Duyệt hóa đơn thành công", invoiceService.approve(id, comment));
     }
 
     @PostMapping("/{id}/reject")
-    @Operation(summary = "Từ chối duyệt hóa đơn (AP) — AP Reject")
+    @Operation(summary = "Từ chối duyệt hóa đơn (AP) — AP Reject. Cập nhật approval_status=rejected trực tiếp vào DB")
     @PreAuthorize("hasAuthority('INVOICE:FINANCE_MANAGER_REVIEW')")
-    public ApiResponse<InvoiceResponse> rejectInvoice(@PathVariable UUID id) {
-        return ApiResponse.success("Từ chối duyệt hóa đơn", invoiceService.reject(id));
+    public ApiResponse<InvoiceResponse> rejectInvoice(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String comment) {
+        return ApiResponse.success("Từ chối duyệt hóa đơn", invoiceService.reject(id, comment));
     }
 
     @PostMapping("/{id}/cancel")

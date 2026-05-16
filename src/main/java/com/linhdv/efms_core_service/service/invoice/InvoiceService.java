@@ -8,9 +8,9 @@ import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceLineRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
-import io.camunda.client.CamundaClient;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,17 +20,30 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
+/**
+ * InvoiceService — quản lý vòng đời hóa đơn AP/AR.
+ * Không còn tích hợp Camunda. Trạng thái phê duyệt được lưu trực tiếp vào DB.
+ *
+ * Luồng trạng thái AP Bill:
+ *   draft → (confirm) → open [approval_status=pending]
+ *         → (approve) → open [approval_status=approved]  → sinh JournalEntry
+ *         → (reject)  → open [approval_status=rejected]
+ *         → (cancel)  → cancelled
+ *
+ * Luồng AR Invoice:
+ *   draft → (confirm) → open (không cần phê duyệt)
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
-    private final CamundaClient camundaClient;
-    private final com.linhdv.efms_core_service.service.camunda.TasklistApiClient tasklistApiClient;
+
+    // ── Read ──────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public PagedResponse<InvoiceResponse> search(UUID companyId, String type, String status, UUID partnerId, int page, int size) {
@@ -49,6 +62,8 @@ public class InvoiceService {
         resp.setLines(lines);
         return resp;
     }
+
+    // ── Write ─────────────────────────────────────────────────────────────────
 
     @Transactional
     public InvoiceResponse create(InvoiceRequest req) {
@@ -113,6 +128,11 @@ public class InvoiceService {
         return toResponse(invoiceRepository.save(invoice));
     }
 
+    /**
+     * Xác nhận hóa đơn: draft → open.
+     * Nếu là AP Bill, đặt approval_status = pending (chờ kế toán trưởng duyệt).
+     * Nếu là AR Invoice, không cần phê duyệt.
+     */
     @Transactional
     public InvoiceResponse confirm(UUID id) {
         Invoice invoice = findOrThrow(id);
@@ -123,23 +143,63 @@ public class InvoiceService {
 
         if ("AP".equals(invoice.getInvoiceType())) {
             invoice.setApprovalStatus("pending");
-
-            var result = camundaClient.newCreateInstanceCommand()
-                    .bpmnProcessId("ap-bill-approval")
-                    .latestVersion()
-                    .variables(Map.of(
-                            "invoiceId", invoice.getId().toString(),
-                            "companyId", invoice.getCompanyId().toString(),
-                            "partnerId", invoice.getPartner().getId().toString(),
-                            "totalAmount", invoice.getTotalAmount().doubleValue(),
-                            "submittedBy", invoice.getCreatedBy() != null ? invoice.getCreatedBy().toString() : ""
-                    ))
-                    .send().join();
-
-            invoice.setCamundaProcessId(String.valueOf(result.getProcessInstanceKey()));
+            log.info("✅ AP Bill [{}] đã được confirm. Trạng thái phê duyệt: pending", id);
         }
 
         return toResponse(invoiceRepository.save(invoice));
+    }
+
+    /**
+     * Phê duyệt hóa đơn AP (approval_status: pending → approved).
+     * Cập nhật DB trực tiếp, không qua Camunda.
+     * Đồng thời trigger sinh JournalEntry tự động.
+     */
+    @Transactional
+    public InvoiceResponse approve(UUID id, String comment) {
+        Invoice invoice = findOrThrow(id);
+        if (!"open".equals(invoice.getStatus())) {
+            throw new IllegalStateException("Hóa đơn phải ở trạng thái open để phê duyệt");
+        }
+        if (!"pending".equals(invoice.getApprovalStatus())) {
+            throw new IllegalStateException("Hóa đơn phải ở trạng thái approval_status=pending để phê duyệt");
+        }
+
+        invoice.setApprovalStatus("approved");
+        if (comment != null && !comment.isBlank()) {
+            invoice.setApprovalComment(comment);
+        }
+
+        // TODO: Gọi JournalService để sinh bút toán kép tự động
+        // JournalEntry entry = journalService.createFromInvoice(invoice);
+        // invoice.setJournalEntry(entry);
+
+        Invoice saved = invoiceRepository.save(invoice);
+        log.info("✅ AP Bill [{}] ĐÃ ĐƯỢC PHÊ DUYỆT. approval_status=approved", id);
+        return toResponse(saved);
+    }
+
+    /**
+     * Từ chối hóa đơn AP (approval_status: pending → rejected).
+     * Cập nhật DB trực tiếp, không qua Camunda.
+     */
+    @Transactional
+    public InvoiceResponse reject(UUID id, String comment) {
+        Invoice invoice = findOrThrow(id);
+        if (!"open".equals(invoice.getStatus())) {
+            throw new IllegalStateException("Hóa đơn phải ở trạng thái open để từ chối");
+        }
+        if (!"pending".equals(invoice.getApprovalStatus())) {
+            throw new IllegalStateException("Hóa đơn phải ở trạng thái approval_status=pending để từ chối");
+        }
+
+        invoice.setApprovalStatus("rejected");
+        if (comment != null && !comment.isBlank()) {
+            invoice.setApprovalComment(comment);
+        }
+
+        Invoice saved = invoiceRepository.save(invoice);
+        log.info("❌ AP Bill [{}] ĐÃ BỊ TỪ CHỐI. approval_status=rejected", id);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -147,42 +207,6 @@ public class InvoiceService {
         Invoice invoice = findOrThrow(id);
         invoice.setStatus("cancelled");
         return toResponse(invoiceRepository.save(invoice));
-    }
-
-    @Transactional
-    public InvoiceResponse approve(UUID id) {
-        Invoice invoice = findOrThrow(id);
-        if (!"open".equals(invoice.getStatus())) {
-            throw new IllegalStateException("Hóa đơn phải ở trạng thái open để phê duyệt");
-        }
-        
-        String taskId = tasklistApiClient.findTaskIdByProcessInstanceKey(invoice.getCamundaProcessId());
-        if (taskId != null) {
-            tasklistApiClient.completeTask(taskId, true, "Approved via InvoiceService");
-            // Status IS NOT updated here. Camunda JobWorker will update the DB.
-        } else {
-            throw new RuntimeException("Không tìm thấy task phê duyệt trên Camunda cho process: " + invoice.getCamundaProcessId());
-        }
-        
-        return toResponse(invoice);
-    }
-
-    @Transactional
-    public InvoiceResponse reject(UUID id) {
-        Invoice invoice = findOrThrow(id);
-        if (!"open".equals(invoice.getStatus())) {
-            throw new IllegalStateException("Hóa đơn phải ở trạng thái open để từ chối");
-        }
-
-        String taskId = tasklistApiClient.findTaskIdByProcessInstanceKey(invoice.getCamundaProcessId());
-        if (taskId != null) {
-            tasklistApiClient.completeTask(taskId, false, "Rejected via InvoiceService");
-            // Status IS NOT updated here. Camunda JobWorker will update the DB.
-        } else {
-            throw new RuntimeException("Không tìm thấy task phê duyệt trên Camunda cho process: " + invoice.getCamundaProcessId());
-        }
-
-        return toResponse(invoice);
     }
 
     @Transactional
@@ -194,73 +218,35 @@ public class InvoiceService {
         invoiceRepository.delete(invoice);
     }
 
-    // AR/AP Aging: Lấy hoá đơn quá hạn
+    // ── Queries ───────────────────────────────────────────────────────────────
+
+    /**
+     * Danh sách hóa đơn AP đang chờ phê duyệt (approval_status = pending).
+     */
+    @Transactional(readOnly = true)
+    public PagedResponse<InvoiceResponse> getPendingApprovals(UUID companyId, int page, int size) {
+        Page<Invoice> data = invoiceRepository.search(companyId, "AP", "open", null, PageRequest.of(page, size));
+        List<InvoiceResponse> content = data.getContent().stream()
+                .filter(inv -> "pending".equals(inv.getApprovalStatus()))
+                .map(this::toResponse)
+                .toList();
+        return PagedResponse.of(content, page, size, content.size());
+    }
+
     @Transactional(readOnly = true)
     public List<InvoiceResponse> getOverdue(UUID companyId) {
         return invoiceRepository.findOverdue(companyId, LocalDate.now())
                 .stream().map(this::toResponse).toList();
     }
 
-    // Lịch sử hóa đơn đối tác
     @Transactional(readOnly = true)
     public List<InvoiceResponse> getByPartner(UUID partnerId) {
         return invoiceRepository.findByPartnerIdOrderByInvoiceDateDesc(partnerId)
                 .stream().map(this::toResponse).toList();
     }
 
-    @Transactional(readOnly = true)
-    public InvoiceResponse getByCamundaProcessId(String processId) {
-        return invoiceRepository.findByCamundaProcessId(processId)
-                .map(this::toResponse)
-                .orElse(null);
-    }
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-    @Transactional(readOnly = true)
-    public PagedResponse<InvoiceResponse> getAllApprovalTasks(int page, int size) {
-        List<Map<String, Object>> tasks = tasklistApiClient.searchAllCreatedTasks();
-        List<InvoiceResponse> responses = new java.util.ArrayList<>();
-        if (tasks != null) {
-            for (Map<String, Object> task : tasks) {
-                String processInstanceKey = String.valueOf(task.get("processInstanceKey"));
-                Invoice invoice = invoiceRepository.findByCamundaProcessId(processInstanceKey).orElse(null);
-                if (invoice != null) {
-                    InvoiceResponse resp = toResponse(invoice);
-                    resp.setTaskId(String.valueOf(task.get("id")));
-                    resp.setTaskName(String.valueOf(task.get("name")));
-                    responses.add(resp);
-                }
-            }
-        }
-        
-        int totalElements = responses.size();
-        int fromIndex = page * size;
-        int toIndex = Math.min(fromIndex + size, totalElements);
-        
-        List<InvoiceResponse> pagedResponses = new java.util.ArrayList<>();
-        if (fromIndex <= totalElements) {
-            pagedResponses = responses.subList(fromIndex, toIndex);
-        }
-        
-        return PagedResponse.of(pagedResponses, page, size, totalElements);
-    }
-
-    @Transactional(readOnly = true)
-    public InvoiceResponse getInvoiceTaskDetail(String taskId) {
-        Map<String, Object> task = tasklistApiClient.getTaskInfo(taskId);
-        if (task == null || !task.containsKey("processInstanceKey")) {
-            throw new EntityNotFoundException("Task not found or processInstanceKey missing");
-        }
-        String processInstanceKey = String.valueOf(task.get("processInstanceKey"));
-        Invoice invoice = invoiceRepository.findByCamundaProcessId(processInstanceKey)
-                .orElseThrow(() -> new EntityNotFoundException("Invoice not found for process: " + processInstanceKey));
-
-        InvoiceResponse resp = toResponse(invoice);
-        resp.setTaskId(String.valueOf(task.get("id")));
-        resp.setTaskName(String.valueOf(task.get("name")));
-        return resp;
-    }
-
-    // ── Helper ────────────────────────────────────────────────────────────────
     private Invoice findOrThrow(UUID id) {
         return invoiceRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Hóa đơn không tồn tại"));
     }
@@ -282,7 +268,7 @@ public class InvoiceService {
                 .paidAmount(inv.getPaidAmount())
                 .status(inv.getStatus())
                 .approvalStatus(inv.getApprovalStatus())
-                .camundaProcessId(inv.getCamundaProcessId())
+                .approvalComment(inv.getApprovalComment())
                 .createdBy(inv.getCreatedBy() != null ? inv.getCreatedBy() : null)
                 .createdAt(inv.getCreatedAt())
                 .journalEntryId(inv.getJournalEntry() != null ? inv.getJournalEntry().getId() : null)

@@ -45,6 +45,4 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     // Lịch sử hóa đơn của 1 đối tác
     List<Invoice> findByPartnerIdOrderByInvoiceDateDesc(UUID partnerId);
-
-    java.util.Optional<Invoice> findByCamundaProcessId(String camundaProcessId);
 }

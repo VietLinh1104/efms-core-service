@@ -92,10 +92,6 @@ public class Invoice {
     @Column(name = "approval_comment", length = Integer.MAX_VALUE)
     private String approvalComment;
 
-    @Size(max = 255)
-    @Column(name = "camunda_process_id", length = 255)
-    private String camundaProcessId;
-
     // @ManyToOne nội bộ Core DB
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "journal_entry_id")
