@@ -7,6 +7,8 @@ import com.linhdv.efms_core_service.dto.invoice.response.InvoiceLineResponse;
 import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceLineRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
+import com.linhdv.efms_core_service.repository.invoice.PartnerRepository;
+import com.linhdv.efms_core_service.service.accounting.JournalService;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,8 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
+    private final PartnerRepository partnerRepository;
+    private final JournalService journalService;
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
@@ -169,12 +173,20 @@ public class InvoiceService {
             invoice.setApprovalComment(comment);
         }
 
-        // TODO: Gọi JournalService để sinh bút toán kép tự động
-        // JournalEntry entry = journalService.createFromInvoice(invoice);
-        // invoice.setJournalEntry(entry);
+        // Load đầy đủ Partner với apAccount (lazy fetch cần eager load thủ công)
+        Partner partner = partnerRepository.findById(invoice.getPartner().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Đối tác không tồn tại: " + invoice.getPartner().getId()));
+        invoice.setPartner(partner);
+
+        // Load danh sách invoice lines
+        List<InvoiceLine> lines = invoiceLineRepository.findByInvoiceIdOrderByIdAsc(id);
+
+        // Sinh bút toán kép tự động
+        JournalEntry journalEntry = journalService.createFromInvoice(invoice, lines);
+        invoice.setJournalEntry(journalEntry);
 
         Invoice saved = invoiceRepository.save(invoice);
-        log.info("✅ AP Bill [{}] ĐÃ ĐƯỢC PHÊ DUYỆT. approval_status=approved", id);
+        log.info("✅ AP Bill [{}] ĐÃ ĐƯỢC PHÊ DUYỆT. approval_status=approved, journalEntryId={}", id, journalEntry.getId());
         return toResponse(saved);
     }
 
