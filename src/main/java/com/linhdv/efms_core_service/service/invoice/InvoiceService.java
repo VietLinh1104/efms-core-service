@@ -8,6 +8,7 @@ import com.linhdv.efms_core_service.dto.invoice.response.InvoiceResponse;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceLineRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
 import com.linhdv.efms_core_service.repository.invoice.PartnerRepository;
+import com.linhdv.efms_core_service.service.AuditService;
 import com.linhdv.efms_core_service.service.accounting.JournalService;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -42,10 +44,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InvoiceService {
 
+    private static final String TABLE = "invoices";
+
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
     private final PartnerRepository partnerRepository;
     private final JournalService journalService;
+    private final AuditService auditService;
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
@@ -95,7 +100,9 @@ public class InvoiceService {
         saved.setSubtotal(totals[0]);
         saved.setTaxAmount(totals[1]);
         saved.setTotalAmount(totals[0].add(totals[1]));
-        return toResponse(invoiceRepository.save(saved));
+        Invoice result = invoiceRepository.save(saved);
+        auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
+        return toResponse(result);
     }
 
     @Transactional
@@ -129,7 +136,10 @@ public class InvoiceService {
         invoice.setTaxAmount(totals[1]);
         invoice.setTotalAmount(totals[0].add(totals[1]));
 
-        return toResponse(invoiceRepository.save(invoice));
+        Map<String, Object> oldSnapshot = auditService.toMap(findOrThrow(id));
+        Invoice result = invoiceRepository.save(invoice);
+        auditService.log(TABLE, result.getId(), "UPDATE", oldSnapshot, auditService.toMap(result));
+        return toResponse(result);
     }
 
     /**
@@ -143,6 +153,8 @@ public class InvoiceService {
         if (!"draft".equals(invoice.getStatus())) {
             throw new IllegalStateException("Hóa đơn phải ở trạng thái draft");
         }
+
+        Map<String, Object> oldSnapshot = Map.of("status", "draft");
         invoice.setStatus("open");
 
         if ("AP".equals(invoice.getInvoiceType())) {
@@ -150,7 +162,11 @@ public class InvoiceService {
             log.info("✅ AP Bill [{}] đã được confirm. Trạng thái phê duyệt: pending", id);
         }
 
-        return toResponse(invoiceRepository.save(invoice));
+        Invoice result = invoiceRepository.save(invoice);
+        auditService.log(TABLE, id, "CONFIRM", oldSnapshot,
+                Map.of("status", "open", "approvalStatus",
+                        result.getApprovalStatus() != null ? result.getApprovalStatus() : ""));
+        return toResponse(result);
     }
 
     /**
@@ -186,6 +202,11 @@ public class InvoiceService {
         invoice.setJournalEntry(journalEntry);
 
         Invoice saved = invoiceRepository.save(invoice);
+        auditService.log(TABLE, id, "APPROVE",
+                Map.of("approvalStatus", "pending"),
+                Map.of("approvalStatus", "approved",
+                        "comment", comment != null ? comment : "",
+                        "journalEntryId", journalEntry.getId().toString()));
         log.info("✅ AP Bill [{}] ĐÃ ĐƯỢC PHÊ DUYỆT. approval_status=approved, journalEntryId={}", id, journalEntry.getId());
         return toResponse(saved);
     }
@@ -210,6 +231,10 @@ public class InvoiceService {
         }
 
         Invoice saved = invoiceRepository.save(invoice);
+        auditService.log(TABLE, id, "REJECT",
+                Map.of("approvalStatus", "pending"),
+                Map.of("approvalStatus", "rejected",
+                        "comment", comment != null ? comment : ""));
         log.info("❌ AP Bill [{}] ĐÃ BỊ TỪ CHỐI. approval_status=rejected", id);
         return toResponse(saved);
     }
@@ -217,8 +242,11 @@ public class InvoiceService {
     @Transactional
     public InvoiceResponse cancel(UUID id) {
         Invoice invoice = findOrThrow(id);
+        Map<String, Object> oldSnapshot = Map.of("status", invoice.getStatus());
         invoice.setStatus("cancelled");
-        return toResponse(invoiceRepository.save(invoice));
+        Invoice result = invoiceRepository.save(invoice);
+        auditService.log(TABLE, id, "CANCEL", oldSnapshot, Map.of("status", "cancelled"));
+        return toResponse(result);
     }
 
     @Transactional
@@ -227,7 +255,9 @@ public class InvoiceService {
         if (!"draft".equals(invoice.getStatus())) {
             throw new IllegalStateException("Chỉ xoá được hóa đơn draft");
         }
+        Map<String, Object> oldSnapshot = auditService.toMap(invoice);
         invoiceRepository.delete(invoice);
+        auditService.log(TABLE, id, "DELETE", oldSnapshot, null);
     }
 
     // ── Queries ───────────────────────────────────────────────────────────────

@@ -27,10 +27,12 @@ public class GatewayHeaderFilter extends OncePerRequestFilter {
         if (userId != null && !userId.isBlank()) {
             List<SimpleGrantedAuthority> authorities = parsePermissions(permissionsRaw);
 
-            // Using email as the principal for now, can be changed to UserContext object if
-            // needed
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email, null,
                     authorities);
+
+            // Lưu userId vào details để AuditService có thể đọc mà không cần inject
+            // HttpServletRequest vào Service layer
+            authentication.setDetails(userId);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }

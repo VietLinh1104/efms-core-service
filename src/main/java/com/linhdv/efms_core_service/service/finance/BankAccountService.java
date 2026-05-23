@@ -5,6 +5,7 @@ import com.linhdv.efms_core_service.dto.finance.response.BankAccountResponse;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.entity.BankAccount;
 import com.linhdv.efms_core_service.repository.finance.BankAccountRepository;
+import com.linhdv.efms_core_service.service.AuditService;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class BankAccountService {
 
+    private static final String TABLE = "bank_accounts";
+
     private final BankAccountRepository bankAccountRepository;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public PagedResponse<BankAccountResponse> search(UUID companyId, String type, String search, int page, int size) {
@@ -54,12 +59,16 @@ public class BankAccountService {
         ba.setIsActive(true);
         ba.setCreatedAt(Instant.now());
 
-        return toResponse(bankAccountRepository.save(ba));
+        BankAccount result = bankAccountRepository.save(ba);
+        auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
+        return toResponse(result);
     }
 
     @Transactional
     public BankAccountResponse update(UUID id, CreateBankAccountRequest req) {
         BankAccount ba = findOrThrow(id);
+
+        Map<String, Object> oldSnapshot = auditService.toMap(ba);
 
         if (req.getGlAccountId() != null) {
             Account acc = new Account(); acc.setId(req.getGlAccountId());
@@ -75,14 +84,19 @@ public class BankAccountService {
         ba.setCurrencyCode(req.getCurrencyCode());
         ba.setOpeningBalance(req.getOpeningBalance());
 
-        return toResponse(bankAccountRepository.save(ba));
+        BankAccount result = bankAccountRepository.save(ba);
+        auditService.log(TABLE, id, "UPDATE", oldSnapshot, auditService.toMap(result));
+        return toResponse(result);
     }
 
     @Transactional
     public BankAccountResponse toggleActive(UUID id) {
         BankAccount ba = findOrThrow(id);
+        Map<String, Object> oldSnapshot = auditService.toMap(ba);
         ba.setIsActive(!ba.getIsActive());
-        return toResponse(bankAccountRepository.save(ba));
+        BankAccount result = bankAccountRepository.save(ba);
+        auditService.log(TABLE, id, "UPDATE", oldSnapshot, auditService.toMap(result));
+        return toResponse(result);
     }
 
     private BankAccount findOrThrow(UUID id) {

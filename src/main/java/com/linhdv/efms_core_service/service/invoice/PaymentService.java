@@ -8,6 +8,7 @@ import com.linhdv.efms_core_service.dto.invoice.response.PaymentResponse;
 import com.linhdv.efms_core_service.repository.invoice.InvoicePaymentRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
 import com.linhdv.efms_core_service.repository.invoice.PaymentRepository;
+import com.linhdv.efms_core_service.service.AuditService;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,15 +20,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
 
+    private static final String TABLE = "payments";
+
     private final PaymentRepository paymentRepository;
     private final InvoicePaymentRepository invoicePaymentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public PagedResponse<PaymentResponse> search(UUID companyId, String type, UUID partnerId, int page, int size) {
@@ -68,7 +73,9 @@ public class PaymentService {
             p.setBankAccount(ba);
         }
 
-        return toResponse(paymentRepository.save(p));
+        Payment result = paymentRepository.save(p);
+        auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
+        return toResponse(result);
     }
 
     // Allocate payment to invoice
@@ -96,6 +103,9 @@ public class PaymentService {
         invoicePaymentRepository.save(ip);
 
         // Cập nhật paid_amount của invoice
+        Map<String, Object> invoiceOld = Map.of(
+                "paidAmount", invoice.getPaidAmount().toPlainString(),
+                "status", invoice.getStatus());
         invoice.setPaidAmount(invoice.getPaidAmount().add(req.getAmount()));
         if (invoice.getPaidAmount().compareTo(invoice.getTotalAmount()) >= 0) {
             invoice.setStatus("paid");
@@ -103,6 +113,11 @@ public class PaymentService {
             invoice.setStatus("in_payment");
         }
         invoiceRepository.save(invoice);
+        auditService.log("invoices", invoice.getId(), "PAYMENT_ALLOCATE", invoiceOld,
+                Map.of("paidAmount", invoice.getPaidAmount().toPlainString(),
+                        "status", invoice.getStatus(),
+                        "paymentId", paymentId.toString(),
+                        "allocatedAmount", req.getAmount().toPlainString()));
 
         return getDetail(paymentId);
     }
@@ -113,7 +128,9 @@ public class PaymentService {
         if (p.getJournalEntry() != null) {
             throw new IllegalStateException("Không thể xoá thanh toán đã post bút toán");
         }
+        Map<String, Object> oldSnapshot = auditService.toMap(p);
         paymentRepository.delete(p);
+        auditService.log(TABLE, id, "DELETE", oldSnapshot, null);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

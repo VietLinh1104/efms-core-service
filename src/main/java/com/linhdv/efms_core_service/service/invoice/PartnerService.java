@@ -5,6 +5,7 @@ import com.linhdv.efms_core_service.dto.invoice.response.PartnerResponse;
 import com.linhdv.efms_core_service.repository.invoice.PartnerRepository;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.entity.Partner;
+import com.linhdv.efms_core_service.service.AuditService;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class PartnerService {
 
+    private static final String TABLE = "partners";
+
     private final PartnerRepository partnerRepository;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public PagedResponse<PartnerResponse> search(UUID companyId, String type, String keyword, int page, int size) {
@@ -57,33 +62,41 @@ public class PartnerService {
         p.setIsActive(true);
         p.setCreatedAt(Instant.now());
 
-        return toResponse(partnerRepository.save(p));
+        Partner result = partnerRepository.save(p);
+        auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
+        return toResponse(result);
     }
 
     @Transactional
     public PartnerResponse update(UUID id, CreatePartnerRequest req) {
-        Partner p = findOrThrow(id);
-        
+        Partner old = findOrThrow(id);
         Account ar = new Account(); ar.setId(req.getArAccountId());
         Account ap = new Account(); ap.setId(req.getApAccountId());
 
-        p.setName(req.getName());
-        p.setType(req.getType());
-        p.setTaxCode(req.getTaxCode());
-        p.setPhone(req.getPhone());
-        p.setEmail(req.getEmail());
-        p.setAddress(req.getAddress());
-        p.setArAccount(ar);
-        p.setApAccount(ap);
+        Map<String, Object> oldSnapshot = auditService.toMap(old);
 
-        return toResponse(partnerRepository.save(p));
+        old.setName(req.getName());
+        old.setType(req.getType());
+        old.setTaxCode(req.getTaxCode());
+        old.setPhone(req.getPhone());
+        old.setEmail(req.getEmail());
+        old.setAddress(req.getAddress());
+        old.setArAccount(ar);
+        old.setApAccount(ap);
+
+        Partner result = partnerRepository.save(old);
+        auditService.log(TABLE, id, "UPDATE", oldSnapshot, auditService.toMap(result));
+        return toResponse(result);
     }
 
     @Transactional
     public PartnerResponse toggleActive(UUID id) {
         Partner p = findOrThrow(id);
+        Map<String, Object> oldSnapshot = auditService.toMap(p);
         p.setIsActive(!p.getIsActive());
-        return toResponse(partnerRepository.save(p));
+        Partner result = partnerRepository.save(p);
+        auditService.log(TABLE, id, "UPDATE", oldSnapshot, auditService.toMap(result));
+        return toResponse(result);
     }
 
     private Partner findOrThrow(UUID id) {
