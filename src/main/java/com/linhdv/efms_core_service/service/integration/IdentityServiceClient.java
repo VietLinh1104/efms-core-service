@@ -43,14 +43,15 @@ public class IdentityServiceClient {
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(userIds)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<ApiResponse<List<UserBasicInfo>>>() {});
+                    .body(new ParameterizedTypeReference<ApiResponse<List<UserBasicInfo>>>() {
+                    });
 
             if (response != null && response.getData() != null) {
                 return response.getData().stream()
                         .collect(Collectors.toMap(UserBasicInfo::getId, user -> user));
             }
         } catch (Exception e) {
-            log.error("Lỗi khi gọi Identity Service lấy thông tin users: {}", e.getMessage());
+            log.error("Lỗi khi gọi Identity Service lấy thông tin users: {}", e.getMessage(), identityUrl);
         }
 
         return Collections.emptyMap();
