@@ -35,7 +35,7 @@ public class AuditLogController {
     @Operation(summary = "Danh sách audit log (toàn hệ thống, có phân trang)")
     @PreAuthorize("hasAuthority('AUDIT:READ')")
     public ApiResponse<PagedResponse<AuditLogResponse>> listAuditLogs(
-            @RequestHeader(name = "X-User-Company-Id", required = false) UUID companyId,
+            @RequestHeader(name = "X-Company-Id", required = false) UUID companyId,
             @RequestParam(required = false) String tableName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -52,7 +52,7 @@ public class AuditLogController {
     @Operation(summary = "Timeline lịch sử thay đổi của một record cụ thể")
     @PreAuthorize("hasAuthority('AUDIT:READ')")
     public ApiResponse<List<AuditLogResponse>> getRecordHistory(
-            @RequestHeader(name = "X-User-Company-Id", required = false) UUID companyId,
+            @RequestHeader(name = "X-Company-Id", required = false) UUID companyId,
             @RequestParam String tableName,
             @RequestParam UUID recordId) {
         return ApiResponse.success(auditService.getRecordHistory(tableName, recordId, companyId));
