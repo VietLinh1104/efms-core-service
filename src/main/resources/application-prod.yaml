@@ -28,3 +28,5 @@ efms:
   app:
     jwtSecret: ${JWT_SECRET}
     jwtExpirationMs: ${JWT_EXPIRATION_MS:86400000}
+  integration:
+    identity-url: ${PRIVATE_IDENTITY_SERVICE_URL:https://efms-identity-service-production.up.railway.app}

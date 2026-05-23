@@ -35,6 +35,9 @@ public class AuditLogResponse {
     /** UUID của user thực hiện thay đổi (từ Identity Service) */
     private UUID changedBy;
 
+    /** Tên của user thực hiện thay đổi (lấy từ Identity Service qua batch fetching) */
+    private String changedByName;
+
     /** Thời điểm thay đổi */
     private Instant changedAt;
 

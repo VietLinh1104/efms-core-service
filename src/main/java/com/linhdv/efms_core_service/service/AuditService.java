@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linhdv.efms_core_service.dto.audit.response.AuditLogResponse;
 import com.linhdv.efms_core_service.entity.AuditLog;
 import com.linhdv.efms_core_service.repository.AuditLogRepository;
+import com.linhdv.efms_core_service.dto.integration.UserBasicInfo;
+import com.linhdv.efms_core_service.service.integration.IdentityServiceClient;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * AuditService — ghi lịch sử thay đổi dữ liệu tài chính vào bảng core.audit_logs.
@@ -37,6 +41,7 @@ public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
+    private final IdentityServiceClient identityServiceClient;
 
     // ── Ghi Log ───────────────────────────────────────────────────────────────
 
@@ -80,9 +85,11 @@ public class AuditService {
      * timeline).
      */
     @Transactional(readOnly = true)
-    public List<AuditLogResponse> getRecordHistory(String tableName, UUID recordId) {
-        return auditLogRepository.findByTableNameAndRecordIdOrderByChangedAtAsc(tableName, recordId)
+    public List<AuditLogResponse> getRecordHistory(String tableName, UUID recordId, UUID companyId) {
+        List<AuditLogResponse> responses = auditLogRepository.findByTableNameAndRecordIdOrderByChangedAtAsc(tableName, recordId)
                 .stream().map(this::toResponse).toList();
+        enrichUserNames(responses, companyId);
+        return responses;
     }
 
     /**
@@ -90,10 +97,37 @@ public class AuditService {
      * chọn.
      */
     @Transactional(readOnly = true)
-    public PagedResponse<AuditLogResponse> getAll(String tableName, int page, int size) {
+    public PagedResponse<AuditLogResponse> getAll(String tableName, UUID companyId, int page, int size) {
         Page<AuditLog> data = auditLogRepository.findAllFiltered(tableName, PageRequest.of(page, size));
-        List<AuditLogResponse> content = data.getContent().stream().map(this::toResponse).toList();
-        return PagedResponse.of(content, page, size, data.getTotalElements());
+        List<AuditLogResponse> responses = data.getContent().stream().map(this::toResponse).collect(Collectors.toList());
+        enrichUserNames(responses, companyId);
+        return PagedResponse.of(responses, page, size, data.getTotalElements());
+    }
+
+    private void enrichUserNames(List<AuditLogResponse> responses, UUID companyId) {
+        if (responses == null || responses.isEmpty() || companyId == null) {
+            return;
+        }
+
+        Set<UUID> userIds = responses.stream()
+                .map(AuditLogResponse::getChangedBy)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        Map<UUID, UserBasicInfo> userMap = identityServiceClient.getBatchUsers(userIds, companyId);
+
+        for (AuditLogResponse res : responses) {
+            if (res.getChangedBy() != null) {
+                UserBasicInfo user = userMap.get(res.getChangedBy());
+                if (user != null) {
+                    res.setChangedByName(user.getFullName());
+                }
+            }
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
