@@ -1,7 +1,6 @@
 package com.linhdv.efms_core_service.controller.invoice;
 
 import com.linhdv.efms_core_service.dto.common.ApiResponse;
-import com.linhdv.efms_core_service.dto.invoice.request.AllocatePaymentRequest;
 import com.linhdv.efms_core_service.dto.invoice.request.CreatePaymentRequest;
 import com.linhdv.efms_core_service.dto.invoice.response.PaymentResponse;
 import com.linhdv.efms_core_service.service.invoice.PaymentService;
@@ -61,22 +60,7 @@ public class PaymentController {
         return ApiResponse.success("Cập nhật thành công", paymentService.create(req));
     }
 
-    @PostMapping("/{id}/allocate")
-    @Operation(summary = "Phân bổ số tiền của payment vào 1 Inovice (AR/AP)")
-    @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
-    public ApiResponse<PaymentResponse> allocate(
-            @PathVariable UUID id, @Valid @RequestBody AllocatePaymentRequest req) {
-        return ApiResponse.success("Phân bổ chứng từ thành công", paymentService.allocate(id, req));
-    }
 
-    @DeleteMapping("/{id}/allocate/{invoiceId}")
-    @Operation(summary = "Gỡ / Xóa phân bổ payment vào invoice")
-    @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
-    public ApiResponse<String> removeAllocation(
-            @PathVariable UUID id, @PathVariable UUID invoiceId) {
-        // TODO: xoá dòng InvoicePayment và cộng lại công nợ Invoice
-        return ApiResponse.success("Đã xóa phân bổ thanh toán.");
-    }
 
     @PostMapping("/{id}/post")
     @Operation(summary = "Ghi sổ bút toán tổng hợp (Post payment → GL)")

@@ -53,4 +53,7 @@ public class CreatePaymentRequest {
 
     @Schema(description = "UUID công ty sở hữu")
     private UUID companyId;
+
+    @Schema(description = "UUID của hóa đơn cần thanh toán")
+    private UUID invoiceId;
 }

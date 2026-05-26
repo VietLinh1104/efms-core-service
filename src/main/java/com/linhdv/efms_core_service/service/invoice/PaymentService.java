@@ -2,11 +2,8 @@ package com.linhdv.efms_core_service.service.invoice;
 
 import com.linhdv.efms_core_service.entity.*;
 import com.linhdv.efms_core_service.dto.invoice.request.CreatePaymentRequest;
-import com.linhdv.efms_core_service.dto.invoice.request.AllocatePaymentRequest;
-import com.linhdv.efms_core_service.dto.invoice.response.InvoicePaymentResponse;
 import com.linhdv.efms_core_service.dto.invoice.response.PaymentResponse;
 import com.linhdv.efms_core_service.repository.finance.BankAccountRepository;
-import com.linhdv.efms_core_service.repository.invoice.InvoicePaymentRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
 import com.linhdv.efms_core_service.repository.invoice.PartnerRepository;
 import com.linhdv.efms_core_service.repository.invoice.PaymentRepository;
@@ -36,7 +33,6 @@ public class PaymentService {
     private static final String TABLE = "payments";
 
     private final PaymentRepository paymentRepository;
-    private final InvoicePaymentRepository invoicePaymentRepository;
     private final InvoiceRepository invoiceRepository;
     private final PartnerRepository partnerRepository;
     private final BankAccountRepository bankAccountRepository;
@@ -54,12 +50,7 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentResponse getDetail(UUID id) {
         Payment p = findOrThrow(id);
-        List<InvoicePaymentResponse> allocs = invoicePaymentRepository.findByPaymentIdOrderByIdAsc(id)
-                .stream().map(this::toAllocResponse).toList();
-
-        PaymentResponse resp = toResponse(p);
-        resp.setAllocations(allocs);
-        return resp;
+        return toResponse(p);
     }
 
     @Transactional
@@ -83,57 +74,49 @@ public class PaymentService {
             p.setBankAccount(ba);
         }
 
+        Invoice invoice = null;
+        if (req.getInvoiceId() != null) {
+            invoice = invoiceRepository.findById(req.getInvoiceId())
+                    .orElseThrow(() -> new EntityNotFoundException("Hóa đơn không tồn tại"));
+
+            if (!"open".equals(invoice.getStatus()) && !"in_payment".equals(invoice.getStatus())) {
+                throw new IllegalStateException("Hóa đơn phải đang mở để thanh toán");
+            }
+
+            if ("AP".equals(invoice.getInvoiceType()) && !"approved".equals(invoice.getApprovalStatus())) {
+                throw new IllegalStateException("Hóa đơn mua hàng (AP Bill) phải được phê duyệt trước khi thanh toán");
+            }
+
+            BigDecimal pending = invoice.getTotalAmount().subtract(invoice.getPaidAmount());
+            if (req.getAmount().compareTo(pending) > 0) {
+                throw new IllegalArgumentException("Số tiền thanh toán vượt quá công nợ hóa đơn (" + pending + ")");
+            }
+
+            p.setInvoice(invoice);
+
+            // Cập nhật paid_amount của invoice
+            invoice.setPaidAmount(invoice.getPaidAmount().add(req.getAmount()));
+            if (invoice.getPaidAmount().compareTo(invoice.getTotalAmount()) >= 0) {
+                invoice.setStatus("paid");
+            } else {
+                invoice.setStatus("in_payment");
+            }
+            invoiceRepository.save(invoice);
+        }
+
         Payment result = paymentRepository.save(p);
+
+        if (invoice != null) {
+            auditService.log("invoices", invoice.getId(), "PAYMENT_ALLOCATE",
+                    Map.of("paidAmount", invoice.getPaidAmount().subtract(req.getAmount()).toPlainString(), "status", "open"),
+                    Map.of("paidAmount", invoice.getPaidAmount().toPlainString(),
+                            "status", invoice.getStatus(),
+                            "paymentId", result.getId().toString(),
+                            "allocatedAmount", req.getAmount().toPlainString()));
+        }
+
         auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
         return toResponse(result);
-    }
-
-    // Allocate payment to invoice
-    @Transactional
-    public PaymentResponse allocate(UUID paymentId, AllocatePaymentRequest req) {
-        Payment payment = findOrThrow(paymentId);
-        Invoice invoice = invoiceRepository.findById(req.getInvoiceId())
-                .orElseThrow(() -> new EntityNotFoundException("Hóa đơn không tồn tại"));
-
-        if (!"open".equals(invoice.getStatus()) && !"in_payment".equals(invoice.getStatus())) {
-            throw new IllegalStateException("Hóa đơn phải đang mở để phân bổ");
-        }
-
-        if ("AP".equals(invoice.getInvoiceType()) && !"approved".equals(invoice.getApprovalStatus())) {
-            throw new IllegalStateException("Hóa đơn mua hàng (AP Bill) phải được phê duyệt trước khi phân bổ thanh toán");
-        }
-
-        BigDecimal pending = invoice.getTotalAmount().subtract(invoice.getPaidAmount());
-        if (req.getAmount().compareTo(pending) > 0) {
-            throw new IllegalArgumentException("Số tiền phân bổ vượt quá công nợ hóa đơn (" + pending + ")");
-        }
-
-        // Tạo dòng phân bổ
-        InvoicePayment ip = new InvoicePayment();
-        ip.setInvoice(invoice);
-        ip.setPayment(payment);
-        ip.setAllocatedAmount(req.getAmount());
-        ip.setCreatedAt(Instant.now());
-        invoicePaymentRepository.save(ip);
-
-        // Cập nhật paid_amount của invoice
-        Map<String, Object> invoiceOld = Map.of(
-                "paidAmount", invoice.getPaidAmount().toPlainString(),
-                "status", invoice.getStatus());
-        invoice.setPaidAmount(invoice.getPaidAmount().add(req.getAmount()));
-        if (invoice.getPaidAmount().compareTo(invoice.getTotalAmount()) >= 0) {
-            invoice.setStatus("paid");
-        } else {
-            invoice.setStatus("in_payment");
-        }
-        invoiceRepository.save(invoice);
-        auditService.log("invoices", invoice.getId(), "PAYMENT_ALLOCATE", invoiceOld,
-                Map.of("paidAmount", invoice.getPaidAmount().toPlainString(),
-                        "status", invoice.getStatus(),
-                        "paymentId", paymentId.toString(),
-                        "allocatedAmount", req.getAmount().toPlainString()));
-
-        return getDetail(paymentId);
     }
 
     /**
@@ -256,6 +239,34 @@ public class PaymentService {
         if (p.getJournalEntry() != null) {
             throw new IllegalStateException("Không thể xoá thanh toán đã post bút toán");
         }
+
+        Invoice invoice = p.getInvoice();
+        if (invoice != null) {
+            Map<String, Object> invoiceOld = Map.of(
+                    "paidAmount", invoice.getPaidAmount().toPlainString(),
+                    "status", invoice.getStatus());
+
+            BigDecimal updatedPaid = invoice.getPaidAmount().subtract(p.getAmount());
+            if (updatedPaid.compareTo(BigDecimal.ZERO) < 0) {
+                updatedPaid = BigDecimal.ZERO;
+            }
+            invoice.setPaidAmount(updatedPaid);
+
+            if (invoice.getPaidAmount().compareTo(BigDecimal.ZERO) == 0) {
+                invoice.setStatus("open");
+            } else if (invoice.getPaidAmount().compareTo(invoice.getTotalAmount()) >= 0) {
+                invoice.setStatus("paid");
+            } else {
+                invoice.setStatus("in_payment");
+            }
+            invoiceRepository.save(invoice);
+
+            auditService.log("invoices", invoice.getId(), "PAYMENT_REMOVE", invoiceOld,
+                    Map.of("paidAmount", invoice.getPaidAmount().toPlainString(),
+                            "status", invoice.getStatus(),
+                            "paymentId", p.getId().toString()));
+        }
+
         Map<String, Object> oldSnapshot = auditService.toMap(p);
         paymentRepository.delete(p);
         auditService.log(TABLE, id, "DELETE", oldSnapshot, null);
@@ -280,19 +291,8 @@ public class PaymentService {
                 .createdBy(p.getCreatedBy() != null ? p.getCreatedBy() : null)
                 .createdAt(p.getCreatedAt())
                 .journalEntryId(p.getJournalEntry() != null ? p.getJournalEntry().getId() : null)
-                .build();
-    }
-
-    private InvoicePaymentResponse toAllocResponse(InvoicePayment ip) {
-        return InvoicePaymentResponse.builder()
-                .id(ip.getId())
-                .paymentId(ip.getPayment().getId())
-                .invoiceId(ip.getInvoice().getId())
-                .invoiceNumber(ip.getInvoice().getInvoiceNumber())
-                .paymentDate(ip.getPayment().getPaymentDate())
-                .allocatedAmount(ip.getAllocatedAmount())
-                .createdAt(ip.getCreatedAt())
-                // .createdBy(...) (Bỏ qua do DB tạm chưa có createdBy vào bảng invoice_payments)
+                .invoiceId(p.getInvoice() != null ? p.getInvoice().getId() : null)
+                .invoiceNumber(p.getInvoice() != null ? p.getInvoice().getInvoiceNumber() : null)
                 .build();
     }
 }

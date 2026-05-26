@@ -73,6 +73,10 @@ public class Payment {
     @JoinColumn(name = "journal_entry_id")
     private JournalEntry journalEntry;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "invoice_id")
+    private Invoice invoice;
+
     // UUID từ Identity Service
     @Column(name = "created_by")
     private UUID createdBy;

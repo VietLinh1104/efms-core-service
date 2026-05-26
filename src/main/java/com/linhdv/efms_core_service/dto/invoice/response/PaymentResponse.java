@@ -7,7 +7,6 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -51,6 +50,9 @@ public class PaymentResponse {
     @Schema(description = "Thời gian tạo")
     private Instant createdAt;
 
-    @Schema(description = "Chi tiết các hóa đơn đã được phân bổ (Nếu gọi detail)")
-    private List<InvoicePaymentResponse> allocations;
+    @Schema(description = "ID Hóa đơn liên kết")
+    private UUID invoiceId;
+
+    @Schema(description = "Số hóa đơn liên kết")
+    private String invoiceNumber;
 }
