@@ -399,6 +399,8 @@ public class PaymentService {
                 .journalEntryId(p.getJournalEntry() != null ? p.getJournalEntry().getId() : null)
                 .invoiceId(p.getInvoice() != null ? p.getInvoice().getId() : null)
                 .invoiceNumber(p.getInvoice() != null ? p.getInvoice().getInvoiceNumber() : null)
+                .bankAccountId(p.getBankAccount() != null ? p.getBankAccount().getId() : null)
+                .bankAccountName(p.getBankAccount() != null ? p.getBankAccount().getName() : null)
                 .build();
     }
 }

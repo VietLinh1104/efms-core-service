@@ -55,4 +55,10 @@ public class PaymentResponse {
 
     @Schema(description = "Số hóa đơn liên kết")
     private String invoiceNumber;
+
+    @Schema(description = "ID Tài khoản ngân hàng / tiền mặt")
+    private UUID bankAccountId;
+
+    @Schema(description = "Tên Tài khoản ngân hàng / tiền mặt")
+    private String bankAccountName;
 }
