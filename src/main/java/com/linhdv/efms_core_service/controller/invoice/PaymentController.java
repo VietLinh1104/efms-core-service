@@ -82,7 +82,7 @@ public class PaymentController {
     @Operation(summary = "Ghi sổ bút toán tổng hợp (Post payment → GL)")
     @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
     public ApiResponse<PaymentResponse> postPayment(@PathVariable UUID id) {
-        return ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.getDetail(id));
+        return ApiResponse.success("Đã ghi sổ vào General Ledger thành công.", paymentService.post(id));
     }
 
     @DeleteMapping("/{id}")
