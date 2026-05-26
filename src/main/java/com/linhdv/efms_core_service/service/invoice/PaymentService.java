@@ -89,6 +89,10 @@ public class PaymentService {
             throw new IllegalStateException("Hóa đơn phải đang mở để phân bổ");
         }
 
+        if ("AP".equals(invoice.getInvoiceType()) && !"approved".equals(invoice.getApprovalStatus())) {
+            throw new IllegalStateException("Hóa đơn mua hàng (AP Bill) phải được phê duyệt trước khi phân bổ thanh toán");
+        }
+
         BigDecimal pending = invoice.getTotalAmount().subtract(invoice.getPaidAmount());
         if (req.getAmount().compareTo(pending) > 0) {
             throw new IllegalArgumentException("Số tiền phân bổ vượt quá công nợ hóa đơn (" + pending + ")");
