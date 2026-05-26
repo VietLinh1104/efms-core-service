@@ -380,7 +380,7 @@ public class PaymentService {
 
     // ── Helper ────────────────────────────────────────────────────────────────
     private Payment findOrThrow(UUID id) {
-        return paymentRepository.findById(id).orElseThrow();
+        return paymentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Thanh toán không tồn tại"));
     }
 
     private PaymentResponse toResponse(Payment p) {
