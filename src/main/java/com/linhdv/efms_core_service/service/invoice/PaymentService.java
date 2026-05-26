@@ -83,6 +83,11 @@ public class PaymentService {
                 throw new IllegalStateException("Hóa đơn phải đang mở để thanh toán");
             }
 
+            String expectedType = "in".equalsIgnoreCase(req.getPaymentType()) ? "AR" : "AP";
+            if (!expectedType.equals(invoice.getInvoiceType())) {
+                throw new IllegalStateException("Loại hóa đơn không khớp với loại giao dịch thanh toán (Thu phải đi với AR, Chi phải đi với AP)");
+            }
+
             if ("AP".equals(invoice.getInvoiceType()) && !"approved".equals(invoice.getApprovalStatus())) {
                 throw new IllegalStateException("Hóa đơn mua hàng (AP Bill) phải được phê duyệt trước khi thanh toán");
             }
