@@ -124,6 +124,107 @@ public class PaymentService {
         return toResponse(result);
     }
 
+    @Transactional
+    public PaymentResponse update(UUID id, CreatePaymentRequest req) {
+        Payment p = findOrThrow(id);
+        if (p.getJournalEntry() != null) {
+            throw new IllegalStateException("Không thể chỉnh sửa thanh toán đã post bút toán");
+        }
+
+        // 1. Restore the old invoice if it was linked
+        Invoice oldInvoice = p.getInvoice();
+        if (oldInvoice != null) {
+            BigDecimal updatedPaid = oldInvoice.getPaidAmount().subtract(p.getAmount());
+            if (updatedPaid.compareTo(BigDecimal.ZERO) < 0) {
+                updatedPaid = BigDecimal.ZERO;
+            }
+            oldInvoice.setPaidAmount(updatedPaid);
+            if (oldInvoice.getPaidAmount().compareTo(BigDecimal.ZERO) == 0) {
+                oldInvoice.setStatus("open");
+            } else if (oldInvoice.getPaidAmount().compareTo(oldInvoice.getTotalAmount()) >= 0) {
+                oldInvoice.setStatus("paid");
+            } else {
+                oldInvoice.setStatus("in_payment");
+            }
+            invoiceRepository.save(oldInvoice);
+
+            auditService.log("invoices", oldInvoice.getId(), "PAYMENT_REMOVE", 
+                    null,
+                    Map.of("paidAmount", oldInvoice.getPaidAmount().toPlainString(),
+                            "status", oldInvoice.getStatus(),
+                            "paymentId", p.getId().toString()));
+        }
+
+        // 2. Set new fields
+        Partner prt = new Partner(); prt.setId(req.getPartnerId());
+        p.setPartner(prt);
+        p.setPaymentType(req.getPaymentType());
+        p.setPaymentDate(req.getPaymentDate());
+        p.setCurrencyCode(req.getCurrencyCode() != null ? req.getCurrencyCode() : "VND");
+        p.setExchangeRate(req.getExchangeRate() != null ? req.getExchangeRate() : BigDecimal.ONE);
+        p.setAmount(req.getAmount());
+        p.setPaymentMethod(req.getPaymentMethod());
+        p.setReference(req.getReference());
+
+        if (req.getBankAccountId() != null) {
+            BankAccount ba = new BankAccount(); ba.setId(req.getBankAccountId());
+            p.setBankAccount(ba);
+        } else {
+            p.setBankAccount(null);
+        }
+
+        // 3. Apply new invoice link if req.getInvoiceId() is provided
+        Invoice newInvoice = null;
+        if (req.getInvoiceId() != null) {
+            newInvoice = invoiceRepository.findById(req.getInvoiceId())
+                    .orElseThrow(() -> new EntityNotFoundException("Hóa đơn không tồn tại"));
+
+            if (!"open".equals(newInvoice.getStatus()) && !"in_payment".equals(newInvoice.getStatus())) {
+                throw new IllegalStateException("Hóa đơn phải đang mở để thanh toán");
+            }
+
+            String expectedType = "in".equalsIgnoreCase(req.getPaymentType()) ? "AR" : "AP";
+            if (!expectedType.equals(newInvoice.getInvoiceType())) {
+                throw new IllegalStateException("Loại hóa đơn không khớp với loại giao dịch thanh toán (Thu phải đi với AR, Chi phải đi với AP)");
+            }
+
+            if ("AP".equals(newInvoice.getInvoiceType()) && !"approved".equals(newInvoice.getApprovalStatus())) {
+                throw new IllegalStateException("Hóa đơn mua hàng (AP Bill) phải được phê duyệt trước khi thanh toán");
+            }
+
+            BigDecimal pending = newInvoice.getTotalAmount().subtract(newInvoice.getPaidAmount());
+            if (req.getAmount().compareTo(pending) > 0) {
+                throw new IllegalArgumentException("Số tiền thanh toán vượt quá công nợ hóa đơn (" + pending + ")");
+            }
+
+            p.setInvoice(newInvoice);
+
+            newInvoice.setPaidAmount(newInvoice.getPaidAmount().add(req.getAmount()));
+            if (newInvoice.getPaidAmount().compareTo(newInvoice.getTotalAmount()) >= 0) {
+                newInvoice.setStatus("paid");
+            } else {
+                newInvoice.setStatus("in_payment");
+            }
+            invoiceRepository.save(newInvoice);
+        } else {
+            p.setInvoice(null);
+        }
+
+        Payment result = paymentRepository.save(p);
+
+        if (newInvoice != null) {
+            auditService.log("invoices", newInvoice.getId(), "PAYMENT_ALLOCATE",
+                    null,
+                    Map.of("paidAmount", newInvoice.getPaidAmount().toPlainString(),
+                            "status", newInvoice.getStatus(),
+                            "paymentId", result.getId().toString(),
+                            "allocatedAmount", req.getAmount().toPlainString()));
+        }
+
+        auditService.log(TABLE, result.getId(), "UPDATE", null, auditService.toMap(result));
+        return toResponse(result);
+    }
+
     /**
      * Ghi sổ (Post) một Payment vào General Ledger.
      *

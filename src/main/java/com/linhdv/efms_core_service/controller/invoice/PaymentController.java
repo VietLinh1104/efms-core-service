@@ -55,9 +55,7 @@ public class PaymentController {
     @PreAuthorize("hasAuthority('PAYMENTS:UPDATE')")
     public ApiResponse<PaymentResponse> update(
             @PathVariable UUID id, @Valid @RequestBody CreatePaymentRequest req) {
-        // ... Logic xóa xong tạo lại (cách áp mãnh dạn nhát để duy trì logic)
-        paymentService.delete(id);
-        return ApiResponse.success("Cập nhật thành công", paymentService.create(req));
+        return ApiResponse.success("Cập nhật thành công", paymentService.update(id, req));
     }
 
 
