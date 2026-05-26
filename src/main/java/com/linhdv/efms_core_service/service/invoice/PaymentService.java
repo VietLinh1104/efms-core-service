@@ -162,6 +162,7 @@ public class PaymentService {
         return InvoicePaymentResponse.builder()
                 .id(ip.getId())
                 .paymentId(ip.getPayment().getId())
+                .invoiceId(ip.getInvoice().getId())
                 .invoiceNumber(ip.getInvoice().getInvoiceNumber())
                 .paymentDate(ip.getPayment().getPaymentDate())
                 .allocatedAmount(ip.getAllocatedAmount())

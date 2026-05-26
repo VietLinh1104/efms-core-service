@@ -20,6 +20,9 @@ public class InvoicePaymentResponse {
     @Schema(description = "ID phiếu thanh toán gốc")
     private UUID paymentId;
 
+    @Schema(description = "ID hóa đơn được phân bổ")
+    private UUID invoiceId;
+
     @Schema(description = "Mã hóa đơn được phân bổ", example = "INV-2025-001")
     private String invoiceNumber;
 
