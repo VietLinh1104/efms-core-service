@@ -3,6 +3,7 @@ package com.linhdv.efms_core_service.service.accounting;
 import com.linhdv.efms_core_service.dto.accounting.request.CreateAccountRequest;
 import com.linhdv.efms_core_service.dto.accounting.response.AccountBalanceResponse;
 import com.linhdv.efms_core_service.dto.accounting.response.AccountResponse;
+import com.linhdv.efms_core_service.mapper.accounting.AccountMapper;
 import com.linhdv.efms_core_service.repository.accounting.AccountRepository;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final AccountMapper accountMapper;
 
     // ── Danh sách ──────────────────────────────────────────────────────────
 
@@ -35,7 +37,7 @@ public class AccountService {
     public List<AccountResponse> listAll(UUID companyId) {
         return accountRepository.findByCompanyIdOrderByCode(companyId)
                 .stream()
-                .map(this::toResponse)
+                .map(accountMapper::toResponse)
                 .toList();
     }
 
@@ -43,7 +45,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     public PagedResponse<AccountResponse> listAllPage(UUID companyId, int page, int size) {
         Page<Account> data = accountRepository.findByCompanyIdOrderByCode(companyId, PageRequest.of(page, size));
-        List<AccountResponse> content = data.getContent().stream().map(this::toResponse).toList();
+        List<AccountResponse> content = data.getContent().stream().map(accountMapper::toResponse).toList();
         return PagedResponse.of(content, page, size, data.getTotalElements());
     }
 
@@ -52,7 +54,7 @@ public class AccountService {
     public List<AccountResponse> listTree(UUID companyId) {
         List<Account> all = accountRepository.findByCompanyIdOrderByCode(companyId);
         Map<UUID, AccountResponse> map = all.stream()
-                .collect(Collectors.toMap(Account::getId, this::toResponse));
+                .collect(Collectors.toMap(Account::getId, accountMapper::toResponse));
 
         // Gán children
         all.forEach(a -> {
@@ -74,7 +76,7 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public AccountResponse getById(UUID id) {
-        return toResponse(findOrThrow(id));
+        return accountMapper.toResponse(findOrThrow(id));
     }
 
     // ── Tạo mới ────────────────────────────────────────────────────────────
@@ -82,21 +84,14 @@ public class AccountService {
     @Transactional
     public AccountResponse create(CreateAccountRequest req) {
 
-        Account account = new Account();
-        account.setCompanyId(req.getCompanyId());
-        account.setCode(req.getCode());
-        account.setName(req.getName());
-        account.setType(req.getType());
-        account.setBalanceType(req.getBalanceType());
-        account.setIsActive(true);
-        account.setCreatedAt(Instant.now());
+        Account account = accountMapper.toEntity(req);
 
         if (req.getParentId() != null) {
             Account parent = findOrThrow(req.getParentId());
             account.setParent(parent);
         }
 
-        return toResponse(accountRepository.save(account));
+        return accountMapper.toResponse(accountRepository.save(account));
     }
 
     // ── Cập nhật ───────────────────────────────────────────────────────────
@@ -104,10 +99,7 @@ public class AccountService {
     @Transactional
     public AccountResponse update(UUID id, CreateAccountRequest req) {
         Account account = findOrThrow(id);
-        account.setCode(req.getCode());
-        account.setName(req.getName());
-        account.setType(req.getType());
-        account.setBalanceType(req.getBalanceType());
+        accountMapper.updateEntityFromRequest(req, account);
 
         if (req.getParentId() != null) {
             account.setParent(findOrThrow(req.getParentId()));
@@ -115,7 +107,7 @@ public class AccountService {
             account.setParent(null);
         }
 
-        return toResponse(accountRepository.save(account));
+        return accountMapper.toResponse(accountRepository.save(account));
     }
 
     // ── Bật / tắt ──────────────────────────────────────────────────────────
@@ -124,7 +116,7 @@ public class AccountService {
     public AccountResponse toggleActive(UUID id) {
         Account account = findOrThrow(id);
         account.setIsActive(!account.getIsActive());
-        return toResponse(accountRepository.save(account));
+        return accountMapper.toResponse(accountRepository.save(account));
     }
 
     // ── Số dư ──────────────────────────────────────────────────────────────
@@ -148,20 +140,5 @@ public class AccountService {
     private Account findOrThrow(UUID id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tài khoản không tồn tại: " + id));
-    }
-
-    private AccountResponse toResponse(Account a) {
-        return AccountResponse.builder()
-                .id(a.getId())
-                .code(a.getCode())
-                .name(a.getName())
-                .type(a.getType())
-                .balanceType(a.getBalanceType())
-                .isActive(a.getIsActive())
-                .createdAt(a.getCreatedAt())
-                .parentId(a.getParent() != null ? a.getParent().getId() : null)
-                .parentName(a.getParent() != null ? a.getParent().getName() : null)
-                .children(new ArrayList<>())
-                .build();
     }
 }

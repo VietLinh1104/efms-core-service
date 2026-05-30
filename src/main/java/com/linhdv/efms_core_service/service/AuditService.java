@@ -3,6 +3,7 @@ package com.linhdv.efms_core_service.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linhdv.efms_core_service.dto.audit.response.AuditLogResponse;
 import com.linhdv.efms_core_service.entity.AuditLog;
+import com.linhdv.efms_core_service.mapper.audit.AuditMapper;
 import com.linhdv.efms_core_service.repository.AuditLogRepository;
 import com.linhdv.efms_core_service.dto.integration.UserBasicInfo;
 import com.linhdv.efms_core_service.service.integration.IdentityServiceClient;
@@ -42,6 +43,7 @@ public class AuditService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
     private final IdentityServiceClient identityServiceClient;
+    private final AuditMapper auditMapper;
 
     // ── Ghi Log ───────────────────────────────────────────────────────────────
 
@@ -87,7 +89,7 @@ public class AuditService {
     @Transactional(readOnly = true)
     public List<AuditLogResponse> getRecordHistory(String tableName, UUID recordId, UUID companyId) {
         List<AuditLogResponse> responses = auditLogRepository.findByTableNameAndRecordIdOrderByChangedAtAsc(tableName, recordId)
-                .stream().map(this::toResponse).toList();
+                .stream().map(auditMapper::toResponse).toList();
         enrichUserNames(responses, companyId);
         return responses;
     }
@@ -99,7 +101,7 @@ public class AuditService {
     @Transactional(readOnly = true)
     public PagedResponse<AuditLogResponse> getAll(String tableName, UUID companyId, int page, int size) {
         Page<AuditLog> data = auditLogRepository.findAllFiltered(tableName, PageRequest.of(page, size));
-        List<AuditLogResponse> responses = data.getContent().stream().map(this::toResponse).collect(Collectors.toList());
+        List<AuditLogResponse> responses = data.getContent().stream().map(auditMapper::toResponse).collect(Collectors.toList());
         enrichUserNames(responses, companyId);
         return PagedResponse.of(responses, page, size, data.getTotalElements());
     }
@@ -164,18 +166,5 @@ public class AuditService {
             }
         }
         return null;
-    }
-
-    private AuditLogResponse toResponse(AuditLog log) {
-        return AuditLogResponse.builder()
-                .id(log.getId())
-                .tableName(log.getTableName())
-                .recordId(log.getRecordId())
-                .action(log.getAction())
-                .changedBy(log.getChangedBy())
-                .changedAt(log.getChangedAt())
-                .oldData(log.getOldData())
-                .newData(log.getNewData())
-                .build();
     }
 }

@@ -2,6 +2,7 @@ package com.linhdv.efms_core_service.service.accounting;
 
 import com.linhdv.efms_core_service.dto.accounting.response.JournalEntryResponse;
 import com.linhdv.efms_core_service.dto.accounting.response.JournalLineResponse;
+import com.linhdv.efms_core_service.mapper.accounting.JournalMapper;
 import com.linhdv.efms_core_service.repository.accounting.JournalEntryRepository;
 import com.linhdv.efms_core_service.repository.accounting.JournalLineRepository;
 import com.linhdv.efms_core_service.entity.*;
@@ -32,6 +33,7 @@ public class JournalService {
 
     private final JournalEntryRepository journalEntryRepository;
     private final JournalLineRepository journalLineRepository;
+    private final JournalMapper journalMapper;
 
     // ── Tạo bút toán tự động từ Invoice được phê duyệt ───────────────────────
 
@@ -119,7 +121,7 @@ public class JournalService {
 
         List<JournalEntryResponse> content = result.getContent()
                 .stream()
-                .map(this::toResponse)
+                .map(journalMapper::toResponse)
                 .toList();
 
         return PagedResponse.of(content, page, size, result.getTotalElements());
@@ -133,10 +135,10 @@ public class JournalService {
         List<JournalLineResponse> lines = journalLineRepository
                 .findByJournalEntryIdOrderByCreatedAt(id)
                 .stream()
-                .map(this::toLineResponse)
+                .map(journalMapper::toLineResponse)
                 .toList();
 
-        JournalEntryResponse resp = toResponse(je);
+        JournalEntryResponse resp = journalMapper.toResponse(je);
         resp.setLines(lines);
         return resp;
     }
@@ -146,39 +148,5 @@ public class JournalService {
     private JournalEntry findOrThrow(UUID id) {
         return journalEntryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Bút toán không tồn tại: " + id));
-    }
-
-    private JournalEntryResponse toResponse(JournalEntry je) {
-        return JournalEntryResponse.builder()
-                .id(je.getId())
-                .entryDate(je.getEntryDate())
-                .reference(je.getReference())
-                .description(je.getDescription())
-                .status(je.getStatus())
-                .source(je.getSource())
-                .periodId(je.getPeriodId())
-                .createdBy(je.getCreatedBy() != null ? je.getCreatedBy() : null)
-                .postedBy(je.getPostedBy() != null ? je.getPostedBy() : null)
-                .postedAt(je.getPostedAt())
-                .createdAt(je.getCreatedAt())
-                .build();
-    }
-
-    private JournalLineResponse toLineResponse(JournalLine line) {
-        return JournalLineResponse.builder()
-                .id(line.getId())
-                .accountId(line.getAccount().getId())
-                .accountCode(line.getAccount().getCode())
-                .accountName(line.getAccount().getName())
-                .partnerId(line.getPartner() != null ? line.getPartner().getId() : null)
-                .partnerName(line.getPartner() != null ? line.getPartner().getName() : null)
-                .debit(line.getDebit())
-                .credit(line.getCredit())
-                .currencyCode(line.getCurrencyCode())
-                .amountCurrency(line.getAmountCurrency())
-                .exchangeRate(line.getExchangeRate())
-                .description(line.getDescription())
-                .createdAt(line.getCreatedAt())
-                .build();
     }
 }

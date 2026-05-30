@@ -4,6 +4,7 @@ import com.linhdv.efms_core_service.dto.finance.request.CreateBankAccountRequest
 import com.linhdv.efms_core_service.dto.finance.response.BankAccountResponse;
 import com.linhdv.efms_core_service.entity.Account;
 import com.linhdv.efms_core_service.entity.BankAccount;
+import com.linhdv.efms_core_service.mapper.finance.BankAccountMapper;
 import com.linhdv.efms_core_service.repository.finance.BankAccountRepository;
 import com.linhdv.efms_core_service.service.AuditService;
 import com.linhdv.efms_core_service.wrapper.PagedResponse;
@@ -27,41 +28,32 @@ public class BankAccountService {
 
     private final BankAccountRepository bankAccountRepository;
     private final AuditService auditService;
+    private final BankAccountMapper bankAccountMapper;
 
     @Transactional(readOnly = true)
     public PagedResponse<BankAccountResponse> search(UUID companyId, String type, String search, int page, int size) {
         Page<BankAccount> data = bankAccountRepository.search(companyId, type, search, PageRequest.of(page, size));
-        List<BankAccountResponse> content = data.getContent().stream().map(this::toResponse).toList();
+        List<BankAccountResponse> content = data.getContent().stream().map(bankAccountMapper::toResponse).toList();
         return PagedResponse.of(content, page, size, data.getTotalElements());
     }
 
     @Transactional(readOnly = true)
     public BankAccountResponse getById(UUID id) {
-        return toResponse(findOrThrow(id));
+        return bankAccountMapper.toResponse(findOrThrow(id));
     }
 
     @Transactional
     public BankAccountResponse create(CreateBankAccountRequest req) {
-        BankAccount ba = new BankAccount();
-        ba.setCompanyId(req.getCompanyId());
+        BankAccount ba = bankAccountMapper.toEntity(req);
         
         if (req.getGlAccountId() != null) {
             Account acc = new Account(); acc.setId(req.getGlAccountId());
             ba.setGlAccount(acc);
         }
 
-        ba.setName(req.getName());
-        ba.setBankName(req.getBankName());
-        ba.setAccountNumber(req.getAccountNumber());
-        ba.setType(req.getType());
-        ba.setCurrencyCode(req.getCurrencyCode());
-        ba.setOpeningBalance(req.getOpeningBalance());
-        ba.setIsActive(true);
-        ba.setCreatedAt(Instant.now());
-
         BankAccount result = bankAccountRepository.save(ba);
         auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
-        return toResponse(result);
+        return bankAccountMapper.toResponse(result);
     }
 
     @Transactional
@@ -70,6 +62,8 @@ public class BankAccountService {
 
         Map<String, Object> oldSnapshot = auditService.toMap(ba);
 
+        bankAccountMapper.updateEntityFromRequest(req, ba);
+
         if (req.getGlAccountId() != null) {
             Account acc = new Account(); acc.setId(req.getGlAccountId());
             ba.setGlAccount(acc);
@@ -77,16 +71,9 @@ public class BankAccountService {
             ba.setGlAccount(null);
         }
 
-        ba.setName(req.getName());
-        ba.setBankName(req.getBankName());
-        ba.setAccountNumber(req.getAccountNumber());
-        ba.setType(req.getType());
-        ba.setCurrencyCode(req.getCurrencyCode());
-        ba.setOpeningBalance(req.getOpeningBalance());
-
         BankAccount result = bankAccountRepository.save(ba);
         auditService.log(TABLE, id, "UPDATE", oldSnapshot, auditService.toMap(result));
-        return toResponse(result);
+        return bankAccountMapper.toResponse(result);
     }
 
     @Transactional
@@ -96,27 +83,11 @@ public class BankAccountService {
         ba.setIsActive(!ba.getIsActive());
         BankAccount result = bankAccountRepository.save(ba);
         auditService.log(TABLE, id, "UPDATE", oldSnapshot, auditService.toMap(result));
-        return toResponse(result);
+        return bankAccountMapper.toResponse(result);
     }
 
     private BankAccount findOrThrow(UUID id) {
         return bankAccountRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tài khoản ngân hàng không tồn tại: " + id));
-    }
-
-    private BankAccountResponse toResponse(BankAccount ba) {
-        return BankAccountResponse.builder()
-                .id(ba.getId())
-                .name(ba.getName())
-                .bankName(ba.getBankName())
-                .accountNumber(ba.getAccountNumber())
-                .type(ba.getType())
-                .currencyCode(ba.getCurrencyCode())
-                .openingBalance(ba.getOpeningBalance())
-                .isActive(ba.getIsActive())
-                .glAccountId(ba.getGlAccount() != null ? ba.getGlAccount().getId() : null)
-                .glAccountCode(ba.getGlAccount() != null ? ba.getGlAccount().getCode() : null)
-                .createdAt(ba.getCreatedAt())
-                .build();
     }
 }

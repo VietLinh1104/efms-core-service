@@ -3,6 +3,7 @@ package com.linhdv.efms_core_service.service.invoice;
 import com.linhdv.efms_core_service.entity.*;
 import com.linhdv.efms_core_service.dto.invoice.request.CreatePaymentRequest;
 import com.linhdv.efms_core_service.dto.invoice.response.PaymentResponse;
+import com.linhdv.efms_core_service.mapper.invoice.PaymentMapper;
 import com.linhdv.efms_core_service.repository.finance.BankAccountRepository;
 import com.linhdv.efms_core_service.repository.invoice.InvoiceRepository;
 import com.linhdv.efms_core_service.repository.invoice.PartnerRepository;
@@ -39,40 +40,24 @@ public class PaymentService {
     private final JournalEntryRepository journalEntryRepository;
     private final JournalLineRepository journalLineRepository;
     private final AuditService auditService;
+    private final PaymentMapper paymentMapper;
 
     @Transactional(readOnly = true)
     public PagedResponse<PaymentResponse> search(UUID companyId, String type, UUID partnerId, int page, int size) {
         Page<Payment> data = paymentRepository.search(companyId, type, partnerId, PageRequest.of(page, size));
-        List<PaymentResponse> content = data.getContent().stream().map(this::toResponse).toList();
+        List<PaymentResponse> content = data.getContent().stream().map(paymentMapper::toResponse).toList();
         return PagedResponse.of(content, page, size, data.getTotalElements());
     }
 
     @Transactional(readOnly = true)
     public PaymentResponse getDetail(UUID id) {
         Payment p = findOrThrow(id);
-        return toResponse(p);
+        return paymentMapper.toResponse(p);
     }
 
     @Transactional
     public PaymentResponse create(CreatePaymentRequest req) {
-        Partner prt = new Partner(); prt.setId(req.getPartnerId());
-
-        Payment p = new Payment();
-        p.setCompanyId(req.getCompanyId());
-        p.setPartner(prt);
-        p.setPaymentType(req.getPaymentType());
-        p.setPaymentDate(req.getPaymentDate());
-        p.setCurrencyCode(req.getCurrencyCode() != null ? req.getCurrencyCode() : "VND");
-        p.setExchangeRate(req.getExchangeRate() != null ? req.getExchangeRate() : BigDecimal.ONE);
-        p.setAmount(req.getAmount());
-        p.setPaymentMethod(req.getPaymentMethod());
-        p.setReference(req.getReference());
-        p.setCreatedAt(Instant.now());
-
-        if (req.getBankAccountId() != null) {
-            BankAccount ba = new BankAccount(); ba.setId(req.getBankAccountId());
-            p.setBankAccount(ba);
-        }
+        Payment p = paymentMapper.toEntity(req);
 
         Invoice invoice = null;
         if (req.getInvoiceId() != null) {
@@ -121,7 +106,7 @@ public class PaymentService {
         }
 
         auditService.log(TABLE, result.getId(), "INSERT", null, auditService.toMap(result));
-        return toResponse(result);
+        return paymentMapper.toResponse(result);
     }
 
     @Transactional
@@ -156,22 +141,7 @@ public class PaymentService {
         }
 
         // 2. Set new fields
-        Partner prt = new Partner(); prt.setId(req.getPartnerId());
-        p.setPartner(prt);
-        p.setPaymentType(req.getPaymentType());
-        p.setPaymentDate(req.getPaymentDate());
-        p.setCurrencyCode(req.getCurrencyCode() != null ? req.getCurrencyCode() : "VND");
-        p.setExchangeRate(req.getExchangeRate() != null ? req.getExchangeRate() : BigDecimal.ONE);
-        p.setAmount(req.getAmount());
-        p.setPaymentMethod(req.getPaymentMethod());
-        p.setReference(req.getReference());
-
-        if (req.getBankAccountId() != null) {
-            BankAccount ba = new BankAccount(); ba.setId(req.getBankAccountId());
-            p.setBankAccount(ba);
-        } else {
-            p.setBankAccount(null);
-        }
+        paymentMapper.updateEntityFromRequest(req, p);
 
         // 3. Apply new invoice link if req.getInvoiceId() is provided
         Invoice newInvoice = null;
@@ -222,7 +192,7 @@ public class PaymentService {
         }
 
         auditService.log(TABLE, result.getId(), "UPDATE", null, auditService.toMap(result));
-        return toResponse(result);
+        return paymentMapper.toResponse(result);
     }
 
     /**
@@ -381,26 +351,5 @@ public class PaymentService {
     // ── Helper ────────────────────────────────────────────────────────────────
     private Payment findOrThrow(UUID id) {
         return paymentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Thanh toán không tồn tại"));
-    }
-
-    private PaymentResponse toResponse(Payment p) {
-        return PaymentResponse.builder()
-                .id(p.getId())
-                .paymentType(p.getPaymentType())
-                .partnerId(p.getPartner().getId())
-                .partnerName(p.getPartner().getName())
-                .paymentDate(p.getPaymentDate())
-                .currencyCode(p.getCurrencyCode())
-                .amount(p.getAmount())
-                .paymentMethod(p.getPaymentMethod())
-                .reference(p.getReference())
-                .createdBy(p.getCreatedBy() != null ? p.getCreatedBy() : null)
-                .createdAt(p.getCreatedAt())
-                .journalEntryId(p.getJournalEntry() != null ? p.getJournalEntry().getId() : null)
-                .invoiceId(p.getInvoice() != null ? p.getInvoice().getId() : null)
-                .invoiceNumber(p.getInvoice() != null ? p.getInvoice().getInvoiceNumber() : null)
-                .bankAccountId(p.getBankAccount() != null ? p.getBankAccount().getId() : null)
-                .bankAccountName(p.getBankAccount() != null ? p.getBankAccount().getName() : null)
-                .build();
     }
 }
